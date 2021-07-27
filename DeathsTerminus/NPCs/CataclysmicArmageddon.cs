@@ -17,8 +17,8 @@ namespace DeathsTerminus.NPCs
 
         public override string Texture
         {
-            //get { return "DeathsTerminus/NPCs/CataclysmicArmageddon"};
-            get { return "DeathsTerminus/NPCs/ExamplePerson"; }
+            get { return "DeathsTerminus/NPCs/CataclysmicArmageddon"; }
+            
         }
 
         public override bool Autoload(ref string name)
