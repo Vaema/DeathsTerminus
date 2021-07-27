@@ -18,7 +18,6 @@ namespace DeathsTerminus.NPCs
         public override string Texture
         {
             get { return "DeathsTerminus/NPCs/CataclysmicArmageddon"; }
-            
         }
 
         public override bool Autoload(ref string name)
@@ -45,8 +44,8 @@ namespace DeathsTerminus.NPCs
         {
             npc.townNPC = true;
             npc.friendly = true;
-            npc.width = 40;
-            npc.height = 40;
+            npc.width = 64;
+            npc.height = 62;
             npc.aiStyle = (int)AIStyles.Passive;
             npc.damage = 10;
             npc.defense = 15;
