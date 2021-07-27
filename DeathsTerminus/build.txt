@@ -1,0 +1,4 @@
+displayName = Death's Terminus
+author = Astrum Genesis
+version = 0.1
+includePDB = false
