@@ -6,6 +6,7 @@ using Terraria.Localization;
 using Terraria.ModLoader;
 using static Terraria.ModLoader.ModContent;
 using DeathsTerminus.Enums;
+using DeathsTerminus.NPCs.CataBoss;
 
 namespace DeathsTerminus.NPCs
 {
@@ -166,8 +167,23 @@ namespace DeathsTerminus.NPCs
             else
             {
                 //Spawn Boss Here
-                npc.active = false;
-                NPC.NewNPC((int)npc.Center.X, (int)npc.Center.Y, NPCType<NPCs.CataBoss.CataBoss>());
+                npc.Transform(mod.NPCType("CataBoss"));
+
+                string message = "So you think you can beat me, huh? Well I'd love to see you even HIT me!";
+                string message2 = "Cataclysmic Armageddon has awoken!";
+
+                if (Main.netMode == NetmodeID.SinglePlayer)
+                {
+                    Main.NewText(message, 0, 76, 153);
+                    Main.NewText(message2, 175, 75, 255);
+                }
+                else if (Main.netMode == NetmodeID.Server)
+                {
+                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message), new Color(0, 76, 153));
+                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message2), new Color(175, 75, 255));
+                }
+
+                Main.PlaySound(new Terraria.Audio.LegacySoundStyle(SoundID.Zombie, 105));
             }
 
         }
