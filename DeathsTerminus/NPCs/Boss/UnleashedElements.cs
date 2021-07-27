@@ -57,7 +57,7 @@ namespace DeathsTerminus.NPCs.Boss
             npc.HitSound = SoundID.Item9;
             npc.DeathSound = SoundID.NPCDeath59;
             npc.buffImmune[24] = true;
-            music = mod.GetSoundSlot(SoundType.Music, "Sounds/Music/Fall");
+            music = MusicID.Boss1;
 
             npc.ai[NPC_STATE] = (int)States.FloatTowards;
         }
