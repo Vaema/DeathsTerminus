@@ -32,10 +32,7 @@ namespace DeathsTerminus
 		}
 		public override void Load()
 		{
-			if (!Main.dedServ) // do not run this code on the server
-			{
-				AddMusicBox(GetSoundSlot(SoundType.Music, "Sounds/Music/Fall"), ItemType("MusicBox_Fall"), TileType("MusicBox_Fall"));
-			}
+			
 		}
 	}
 }
