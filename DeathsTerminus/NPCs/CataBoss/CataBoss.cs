@@ -16,13 +16,24 @@ namespace DeathsTerminus.NPCs.CataBoss
         SideScythesAttack = 1,
         SideDashesAttack = 2,
         SideDashesAttack2 = 3,
-        CircleAttack = 4,
-        SideScythesAttackSpin = 5
+        SideScythesAttackSpin = 4,
+        ArenaScythesCircle = 5,
+        IceSpiralAttack = 6,
     }
 
     [AutoloadBossHead]
     public class CataBoss : ModNPC
     {
+        //ai[0] is attack type
+        //ai[1] is attack timer
+        //ai[2] is arena projectile
+        //ai[3] is ?
+
+        private Projectile arenaProjectile
+        {
+            get { return Main.projectile[(int)npc.ai[2]]; }
+        }
+
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Cataclysmic Armageddon");
@@ -72,8 +83,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                     if (npc.timeLeft == 1)
                     {
-                        npc.active = false;
-                        NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
+                        npc.Transform(NPCType<NPCs.CataclysmicArmageddon>());
                     }
                     return;
                 }
@@ -82,7 +92,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             switch ((CataBossAttackIDs)npc.ai[0])
             {
                 case CataBossAttackIDs.SpawnAnimation:
-                    //spawn behavior! Just move into place near the player for now
+                    //spawn behavior! Just move into place near the player for now, and spawn the arena
 
                     npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                     npc.spriteDirection = npc.direction;
@@ -91,6 +101,15 @@ namespace DeathsTerminus.NPCs.CataBoss
                     if (goalVelocity.Length() > 4)
                     {
                         npc.velocity += (goalVelocity - npc.velocity) / 10;
+                    }
+
+                    if (npc.ai[1] == 0)
+                    {
+                        if (Main.netMode != 1)
+                        {
+                            npc.ai[2] = Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossArena>(), 80, 0f, Main.myPlayer, npc.whoAmI);
+                        }
+                        npc.netUpdate = true;
                     }
 
                     npc.ai[1]++;
@@ -119,7 +138,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                         for (int i = 0; i < numShots; i++)
                         {
                             Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                            Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots) * 0.5f, ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                         }
                     }
 
@@ -173,10 +191,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                             Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
                             Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
                             Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-
-                            Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
-                            Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
-                            Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                         }
 
                         if (npc.ai[1] % (dashPeriod + postDashPause) == dashPeriod)
@@ -236,15 +250,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                             for (int i = -2; i <= 2; i++)
                             {
                                 Projectile.NewProjectile(npc.Center + npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2) * i * 16, npc.velocity.SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                                Projectile.NewProjectile(npc.Center + npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2) * i * 16, npc.velocity.SafeNormalize(Vector2.Zero), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                             }
 
                             for (int i = -2; i <= 2; i++)
                             {
                                 Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2 + angleOffset * i) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
                                 Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2 + angleOffset * i) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                                Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2 + angleOffset * i), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
-                                Projectile.NewProjectile(npc.Center, npc.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2 + angleOffset * i), ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                             }
                         }
 
@@ -256,41 +267,6 @@ namespace DeathsTerminus.NPCs.CataBoss
 
                     npc.ai[1]++;
                     if (npc.ai[1] == numDashes * (dashPeriod + postDashPause))
-                    {
-                        //give it time to get into position
-                        npc.ai[1] = -60;
-                        npc.ai[0] = (int)CataBossAttackIDs.CircleAttack;
-                    }
-                    break;
-                case CataBossAttackIDs.CircleAttack:
-                    if (npc.ai[1] < 0)
-                    {
-                        npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-                        npc.spriteDirection = npc.direction;
-                        goalPosition = player.Center + new Vector2(-npc.direction, 0) * 480;
-                        goalVelocity = (goalPosition - npc.Center) / 10;
-                        if (goalVelocity.Length() < 4)
-                        {
-                            goalVelocity = goalVelocity.SafeNormalize(Vector2.Zero) * 4;
-                        }
-                        npc.velocity += (goalVelocity - npc.velocity) / 10;
-                    }
-                    else
-                    {
-                        npc.spriteDirection = player.Center.X > npc.Center.X ? 1 : -1;
-                        goalPosition = player.Center + new Vector2(-npc.direction, 0).RotatedBy(npc.direction * npc.ai[1] / 8f) * 480;
-                        goalVelocity = (goalPosition - npc.Center) / 10;
-                        npc.velocity += (goalVelocity - npc.velocity) / 10;
-
-                        if (npc.ai[1] % 10 == 0)
-                        {
-                            Projectile.NewProjectile(npc.Center, (player.Center - npc.Center).SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                            Projectile.NewProjectile(npc.Center, (player.Center - npc.Center).SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
-                        }
-                    }
-
-                    npc.ai[1]++;
-                    if (npc.ai[1] == 240)
                     {
                         //give it time to get into position
                         npc.ai[1] = -60;
@@ -319,7 +295,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                             for (int i = 0; i < numShots; i++)
                             {
                                 Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots + npc.direction * npc.ai[1] / 100f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                                Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots + npc.direction * npc.ai[1] / 100f) * 0.5f, ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                             }
                         }
                     }
@@ -331,7 +306,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                                 for (int i = 0; i < numShots; i++)
                                 {
                                     Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * npc.ai[1] / 100f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                                    Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * npc.ai[1] / 100f) * 0.5f, ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                                 }
                             }
                         }
@@ -341,7 +315,73 @@ namespace DeathsTerminus.NPCs.CataBoss
                     {
                         //give it time to get into position
                         npc.ai[1] = -60;
-                        npc.ai[0] = (int)CataBossAttackIDs.SideScythesAttack;
+                        npc.ai[0] = (int)CataBossAttackIDs.ArenaScythesCircle;
+                    }
+                    break;
+                case CataBossAttackIDs.ArenaScythesCircle:
+                    if (npc.ai[1] < 0)
+                    {
+                        npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                        npc.spriteDirection = npc.direction;
+                        goalPosition = arenaProjectile.Center + new Vector2(-npc.direction, 0) * (arenaProjectile.ai[1] + 120);
+                        goalVelocity = (goalPosition - npc.Center) / 10;
+                        if (goalVelocity.Length() < 4)
+                        {
+                            goalVelocity = goalVelocity.SafeNormalize(Vector2.Zero) * 4;
+                        }
+                        npc.velocity += (goalVelocity - npc.velocity) / 10;
+                    }
+                    else
+                    {
+                        npc.spriteDirection = player.Center.X > npc.Center.X ? 1 : -1;
+                        goalPosition = arenaProjectile.Center + new Vector2(-npc.direction, 0).RotatedBy(npc.direction * npc.ai[1] / 10f) * (arenaProjectile.ai[1] + 120);
+                        goalVelocity = (goalPosition - npc.Center) / 2;
+                        npc.velocity += (goalVelocity - npc.velocity) / 2;
+
+                        if (npc.ai[1] % 4 == 0)
+                        {
+                            Projectile.NewProjectile(npc.Center, (arenaProjectile.Center - npc.Center).SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
+                        }
+                    }
+
+                    npc.ai[1]++;
+                    if (npc.ai[1] == 360)
+                    {
+                        //give it time to get into position
+                        npc.ai[1] = -60;
+                        npc.ai[0] = (int)CataBossAttackIDs.IceSpiralAttack;
+                    }
+                    break;
+                case CataBossAttackIDs.IceSpiralAttack:
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                    npc.spriteDirection = npc.direction;
+                    goalPosition = arenaProjectile.Center;
+                    goalVelocity = (goalPosition - npc.Center) / 10;
+                    if (goalVelocity.Length() < 4)
+                    {
+                        goalVelocity = goalVelocity.SafeNormalize(Vector2.Zero) * 4;
+                    }
+                    npc.velocity += (goalVelocity - npc.velocity) / 10;
+
+                    if (npc.ai[1] >= 0)
+                    {
+                        npc.velocity = arenaProjectile.Center - npc.Center;
+
+                        if (npc.ai[1] == 0 && Main.netMode != 1)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                Projectile.NewProjectile(arenaProjectile.Center, Vector2.Zero, ProjectileType<RotatingIceShards>(), 80, 0f, Main.myPlayer, ai0: i);
+                            }
+                        }
+                    }
+
+                    npc.ai[1]++;
+                    if (npc.ai[1] == 360)
+                    {
+                        //give it time to get into position
+                        npc.ai[1] = -60;
+                        npc.ai[0] = (int)CataBossAttackIDs.IceSpiralAttack;
                     }
                     break;
             }
@@ -351,6 +391,129 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
             return true;
+        }
+
+        public override bool CheckActive()
+        {
+            return false;
+        }
+    }
+
+    public class CataBossArena : ModProjectile
+    {
+        private static int sigilRadius = 27;
+        private static int sigilCount = 80;
+
+
+        //the arena!
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Orbiting Sigil");
+            Main.projFrames[projectile.type] = 4;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 2;
+            projectile.height = 2;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.scale = 0f;
+            projectile.timeLeft = 2;
+        }
+
+        public override void AI()
+        {
+            NPC boss = Main.npc[(int)projectile.ai[0]];
+            Player player = Main.player[boss.target];
+
+            if (!boss.active)
+            {
+                projectile.Kill();
+                return;
+            }
+            else
+            {
+                projectile.timeLeft = 2;
+            }
+
+            //grow to full size
+            if (projectile.scale < 1)
+            {
+                projectile.scale += 1 / 60f;
+            }
+            else
+            {
+                projectile.scale = 1f;
+            }
+
+            //rotation increment
+            projectile.rotation += 0.01f;
+
+            //set radius and center (replace with more dynamic AI later)
+            projectile.ai[1] = 1200;
+            projectile.velocity = (player.Center - projectile.Center) * GetArenaSpeed(boss);
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 3)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 4)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        private float GetArenaSpeed(NPC boss)
+        {
+            switch ((CataBossAttackIDs)boss.ai[0])
+            {
+                case CataBossAttackIDs.SpawnAnimation:
+                    return 1 / 120f;
+                case CataBossAttackIDs.SideScythesAttack:
+                case CataBossAttackIDs.SideScythesAttackSpin:
+                    return 1 / 400f;
+                case CataBossAttackIDs.SideDashesAttack:
+                case CataBossAttackIDs.SideDashesAttack2:
+                    return 1 / 600f;
+                case CataBossAttackIDs.ArenaScythesCircle:
+                case CataBossAttackIDs.IceSpiralAttack:
+                    return 0f;
+            }
+            return 0f;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            for (int i = 0; i < sigilCount; i++)
+            {
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount);
+                float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+                float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+                if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < sigilRadius)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            for (int i=0; i < sigilCount; i++)
+            {
+                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount), new Rectangle(0, 96 * projectile.frame, 66, 96), Color.White * projectile.scale, projectile.rotation + i * MathHelper.TwoPi / sigilCount, new Vector2(33, 65), projectile.scale, SpriteEffects.None, 0f);
+            }
+            return false;
         }
     }
 
@@ -391,6 +554,15 @@ namespace DeathsTerminus.NPCs.CataBoss
                 else
                 {
                     projectile.ai[0] = 200f;
+                }
+            }
+
+            if (projectile.ai[1] == 0)
+            {
+                projectile.ai[1] = 1;
+                if (Main.netMode != 1)
+                {
+                    Projectile.NewProjectile(projectile.Center, projectile.velocity, ProjectileType<CataBossScytheTelegraph>(), 0, 0f, Main.myPlayer);
                 }
             }
         }
@@ -452,6 +624,72 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
         {
             drawCacheProjsBehindNPCs.Add(index);
+        }
+    }
+
+    public class RotatingIceShards : ModProjectile
+    {
+        public override string Texture => "Terraria/Extra_35";
+
+        private static int shardRadius = 12;
+        private static int shardCount = 12;
+
+        //the arena!
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Ice Shard");
+            Main.projFrames[projectile.type] = 1;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 2;
+            projectile.height = 2;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.scale = 1f;
+            projectile.timeLeft = 360;
+        }
+
+        public override void AI()
+        {
+            float angle = MathHelper.TwoPi * projectile.timeLeft / 360f;
+
+            //set radius and rotation (replace with more dynamic AI later)
+            projectile.ai[1] = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
+            projectile.rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            for (int i = 0; i < shardCount; i++)
+            {
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount);
+                float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+                float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+                if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < shardRadius)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            for (int i = 0; i < shardCount; i++)
+            {
+                Rectangle frame = texture.Frame(1, 3);
+
+                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * projectile.scale, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2, new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+            }
+            return false;
         }
     }
 }
