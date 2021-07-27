@@ -381,7 +381,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     {
                         //give it time to get into position
                         npc.ai[1] = -60;
-                        npc.ai[0] = (int)CataBossAttackIDs.IceSpiralAttack;
+                        npc.ai[0] = (int)CataBossAttackIDs.SideScythesAttack;
                     }
                     break;
             }
@@ -419,7 +419,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.alpha = 0;
             projectile.light = 0f;
             projectile.aiStyle = -1;
-            projectile.hostile = true;
+            projectile.hostile = false;
             projectile.penetrate = -1;
             projectile.tileCollide = false;
             projectile.scale = 0f;
@@ -449,6 +449,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             else
             {
                 projectile.scale = 1f;
+                projectile.hostile = true;
             }
 
             //rotation increment
@@ -457,6 +458,22 @@ namespace DeathsTerminus.NPCs.CataBoss
             //set radius and center (replace with more dynamic AI later)
             projectile.ai[1] = 1200;
             projectile.velocity = (player.Center - projectile.Center) * GetArenaSpeed(boss);
+
+            if (projectile.scale >= 1)
+            {
+                if ((Main.LocalPlayer.Center - projectile.Center).Length() > projectile.ai[1])
+                {
+                    Vector2 normal = (Main.LocalPlayer.Center - projectile.Center).SafeNormalize(Vector2.Zero);
+                    Vector2 relativeVelocity = Main.LocalPlayer.velocity - projectile.velocity;
+
+                    Main.LocalPlayer.Center = projectile.Center + normal * projectile.ai[1];
+
+                    if (relativeVelocity.X * normal.X + relativeVelocity.Y * normal.Y > 0)
+                    {
+                        Main.LocalPlayer.velocity -= normal * (relativeVelocity.X * normal.X + relativeVelocity.Y * normal.Y);
+                    }
+                }
+            }
 
             //frame stuff
             projectile.frameCounter++;
@@ -687,7 +704,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 Rectangle frame = texture.Frame(1, 3);
 
-                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * projectile.scale, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2, new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * projectile.scale, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * projectile.timeLeft / 360f, new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
             }
             return false;
         }
