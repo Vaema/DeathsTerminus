@@ -19,6 +19,8 @@ namespace DeathsTerminus.NPCs.CataBoss
         //ai[3] is ?
 
         private bool canShieldBonk;
+        private bool holdingShield;
+        private int iceShieldCooldown;
 
         public override void SetStaticDefaults()
         {
@@ -29,11 +31,13 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override void SetDefaults()
         {
             npc.aiStyle = (int)AIStyles.CustomAI;
-            npc.width = 26;
+            npc.width = 18;
             npc.height = 40;
 
             npc.defense = 0;
-            npc.lifeMax = 250;
+            npc.lifeMax = 1;
+            npc.chaseable = false;
+            npc.HitSound = SoundID.NPCHit5;
 
             npc.damage = 160;
             npc.knockBackResist = 0f;
@@ -47,9 +51,11 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.lavaImmune = true;
             npc.noGravity = true;
             npc.noTileCollide = true;
-            npc.dontTakeDamage = true;
 
-            npc.buffImmune[BuffID.Confused] = true;
+            for (int i=0; i<Main.maxBuffTypes; i++)
+            {
+                npc.buffImmune[i] = true;
+            }
 
             music = MusicID.Boss4;
         }
@@ -63,10 +69,25 @@ namespace DeathsTerminus.NPCs.CataBoss
                 player = Main.player[npc.target];
                 if (!player.active || player.dead)
                 {
-                    NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
-                    npc.active = false;
+                    npc.Transform(NPCType<CataclysmicArmageddon>());
+                    //NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
+                    //npc.active = false;
+
+                    for (int i=0; i<Main.maxProjectiles; i++)
+                    {
+                        if (Main.projectile[i].hostile)
+                        {
+                            Main.projectile[i].active = false;
+                        }
+                    }
                     return;
                 }
+            }
+
+            holdingShield = false;
+            if (iceShieldCooldown > 0)
+            {
+                iceShieldCooldown--;
             }
 
             switch (npc.ai[0])
@@ -264,14 +285,14 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
             npc.spriteDirection = npc.direction;
-            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 480;
+            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 720;
 
             FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.4f, maxYAcc: 0.4f);
 
-            int shotPeriod = 50;
+            int shotPeriod = 60;
             int numShots = 4;
             float shotSpeed = 0.5f;
-            float shotDistanceFromPlayer = 200;
+            float shotDistanceFromPlayer = 300;
 
             if (npc.ai[1] >= 60 && npc.ai[1] % shotPeriod == 60 % shotPeriod && Main.netMode != 1)
             {
@@ -285,11 +306,11 @@ namespace DeathsTerminus.NPCs.CataBoss
                 Vector2 shotVelocity = (player.Center - npc.Center).SafeNormalize(Vector2.Zero).RotatedBy(direction * Math.Asin(angleRatio)) * shotSpeed;
 
                 Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.1f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.1f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
                 Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.1f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.1f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
             }
 
             npc.ai[1]++;
@@ -306,6 +327,8 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             if (npc.ai[1] < 60)
             {
+                npc.dontTakeDamage = true;
+
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
@@ -314,6 +337,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
             else
             {
+                npc.dontTakeDamage = false;
                 npc.velocity = Vector2.Zero;
 
                 if (npc.ai[1] == 60 && Main.netMode != 1)
@@ -354,6 +378,8 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             Player player = Main.player[npc.target];
 
+            holdingShield = true;
+
             if (npc.ai[1] % 84 < 60)
             {
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
@@ -366,6 +392,9 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 canShieldBonk = true;
 
+                npc.width = 40;
+                npc.position.X -= 11;
+
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                 npc.spriteDirection = npc.direction;
                 npc.velocity.X += npc.direction * 15;
@@ -373,9 +402,62 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
             else if (npc.ai[1] % 84 == 83)
             {
+                if (canShieldBonk)
+                {
+                    npc.width = 18;
+                    npc.position.X += 11;
+                }
+
                 canShieldBonk = false;
 
                 npc.velocity.X -= npc.direction * 15;
+            }
+
+            //custom stuff for player EoC shield bonks
+            //adapted from how the player detects SoC collision
+            if (canShieldBonk)
+            {
+                for (int i = 0; i < Main.maxPlayers; i++)
+                {
+                    if (Main.player[i].active && !Main.player[i].dead && Main.player[i].dash == 2 && Main.player[i].eocDash > 0 && Main.player[i].eocHit < 0)
+                    {
+                        Rectangle shieldHitbox = new Rectangle((int)((double)Main.player[i].position.X + (double)Main.player[i].velocity.X * 0.5 - 4.0), (int)((double)Main.player[i].position.Y + (double)Main.player[i].velocity.Y * 0.5 - 4.0), Main.player[i].width + 8, Main.player[i].height + 8);
+                        if (shieldHitbox.Intersects(npc.getRect()))
+                        {
+                            //custom stuff for player EoC shield bonks
+                            //adapted from how the player detects SoC collision
+                            npc.width = 18;
+                            npc.position.X += 11;
+
+                            npc.direction *= -1;
+                            npc.velocity.X += npc.direction * 30;
+                            canShieldBonk = false;
+
+                            Main.PlaySound(SoundID.NPCHit4, npc.Center);
+
+                            //redo the player's SoC bounce motion
+                            int num40 = Main.player[i].direction;
+                            if (Main.player[i].velocity.X < 0f)
+                            {
+                                num40 = -1;
+                            }
+                            if (Main.player[i].velocity.X > 0f)
+                            {
+                                num40 = 1;
+                            }
+                            Main.player[i].eocDash = 10;
+                            Main.player[i].dashDelay = 30;
+                            Main.player[i].velocity.X = -num40 * 9;
+                            Main.player[i].velocity.Y = -4f;
+                            Main.player[i].immune = true;
+                            Main.player[i].immuneNoBlink = true;
+                            Main.player[i].immuneTime = 4;
+                            Main.player[i].eocHit = i;
+
+                            break;
+                        }
+                    }
+                }
             }
 
             npc.ai[1]++;
@@ -395,16 +477,65 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             if (canShieldBonk)
             {
+                npc.width = 18;
+                npc.position.X += 11;
+
                 npc.direction *= -1;
                 npc.velocity.X += npc.direction * 30;
                 canShieldBonk = false;
             }
         }
 
+        public override void ModifyHitByItem(Player player, Item item, ref int damage, ref float knockback, ref bool crit)
+        {
+            iceShieldCooldown = 60;
+        }
+
+        public override void ModifyHitByProjectile(Projectile projectile, ref int damage, ref float knockback, ref bool crit, ref int hitDirection)
+        {
+            iceShieldCooldown = 60;
+        }
+
+        public override bool StrikeNPC(ref double damage, int defense, ref float knockback, int hitDirection, ref bool crit)
+        {
+            damage = 0;
+            return true;
+        }
+
+        public override void PostDraw(SpriteBatch spriteBatch, Color drawColor)
+        {
+            if (holdingShield)
+            {
+                Texture2D shieldTexture = ModContent.GetTexture("Terraria/Acc_Shield_5");
+                Rectangle frame = shieldTexture.Frame(1, 20);
+                SpriteEffects effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                Vector2 shieldOffset = new Vector2(npc.spriteDirection * 4, -4);
+
+                spriteBatch.Draw(shieldTexture, npc.Center - Main.screenPosition + shieldOffset, frame, drawColor, 0f, frame.Size() / 2f, 1f, effects, 0f);
+            }
+
+            if (iceShieldCooldown > 0)
+            {
+                Texture2D shieldTexture = ModContent.GetTexture("Terraria/Projectile_464");
+                Rectangle frame = shieldTexture.Frame();
+                SpriteEffects effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                float alpha = iceShieldCooldown / 120f;
+                Vector2 shieldOffset = new Vector2(0, -2);
+
+                spriteBatch.Draw(shieldTexture, npc.Center - Main.screenPosition + shieldOffset, frame, drawColor * alpha, 0f, frame.Size() / 2f, 1f, effects, 0f);
+            }
+        }
+
         public override bool CheckDead()
         {
-            NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
-            return true;
+            if (false)
+            {
+                //doesn't actually happen yet
+                NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
+                return true;
+            }
+            npc.life = npc.lifeMax;
+            return false;
         }
 
         public override bool CheckActive()
@@ -570,7 +701,9 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.tileCollide = false;
             projectile.ignoreWater = true;
             projectile.scale = 0.9f;
-            projectile.timeLeft = 180;
+            projectile.timeLeft = 120;
+
+            projectile.hide = true;
         }
 
         public override void AI()
@@ -586,13 +719,18 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
             spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
 
-            if (projectile.timeLeft > 180 - 30)
+            if (projectile.timeLeft > 120 - 30)
             {
-                float telegraphAlpha = (30 + projectile.timeLeft - 180) / 30f;
+                float telegraphAlpha = (30 + projectile.timeLeft - 120) / 30f;
                 spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.Purple * telegraphAlpha, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
             }
 
@@ -621,7 +759,9 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.penetrate = -1;
             projectile.tileCollide = false;
             projectile.scale = 0.9f;
-            projectile.timeLeft = 180;
+            projectile.timeLeft = 160;
+
+            projectile.hide = true;
         }
 
         public override void AI()
@@ -641,13 +781,18 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
             spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
 
-            if (projectile.timeLeft > 180 - 30)
+            if (projectile.timeLeft > 160 - 30)
             {
-                float telegraphAlpha = (30 + projectile.timeLeft - 180) / 30f;
+                float telegraphAlpha = (30 + projectile.timeLeft - 160) / 30f;
                 spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.Purple * telegraphAlpha, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
             }
 
@@ -682,6 +827,8 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.ignoreWater = true;
             projectile.scale = 1f;
             projectile.timeLeft = 360;
+
+            projectile.hide = true;
         }
 
         public override void AI()
@@ -706,6 +853,11 @@ namespace DeathsTerminus.NPCs.CataBoss
                 }
             }
             return false;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
         }
 
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
@@ -757,6 +909,8 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.ignoreWater = true;
             projectile.scale = 1f;
             projectile.timeLeft = 200;
+
+            projectile.hide = true;
         }
 
         public override void AI()
@@ -772,6 +926,11 @@ namespace DeathsTerminus.NPCs.CataBoss
             float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
             float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
             return new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < shardRadius;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
         }
 
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
