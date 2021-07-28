@@ -20,6 +20,7 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         private bool canShieldBonk;
         private bool holdingShield;
+        private bool onSlimeMount;
         private int iceShieldCooldown;
 
         public override void SetStaticDefaults()
@@ -35,7 +36,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.height = 40;
 
             npc.defense = 0;
-            npc.lifeMax = 1;
+            npc.lifeMax = 250;
             npc.chaseable = false;
             npc.HitSound = SoundID.NPCHit5;
 
@@ -93,38 +94,98 @@ namespace DeathsTerminus.NPCs.CataBoss
             switch (npc.ai[0])
             {
                 case 0:
-                    //Spawn animation
+                    //1 sec each
                     SpawnAnimation();
                     break;
                 case 1:
-                    //Basic side scythes
+                    //3 secs each
                     SideScythesAttack();
                     break;
                 case 2:
-                    //Spinning side scythes
+                case 7:
+                    //7.3333 secs each
                     SideScythesAttackSpin();
                     break;
                 case 3:
-                    //Scythe blasts
+                case 8:
+                    //4.3333 secs each
                     SideBlastsAttack();
                     break;
                 case 4:
-                    //More scythe blasts
-                    SideBlastsAttackHard();
-                    break;
-                case 5:
-                    //Ice spiral
+                    //8 secs each
                     IceSpiralAttack();
                     break;
-                case 6:
-                    //Shield bonk
+                case 5:
+                    //2.8 secs each
                     ShieldBonk();
                     break;
-                case 7:
-                    npc.ai[0] = 1;
-                    //Slime bonk
-                    //SlimeBonk();
+                case 6:
+                    //2 secs each
+                    SlimeBonk();
                     break;
+                case 9:
+                    //5 secs each
+                    SideBlastsAttackHard();
+                    break;
+                case 10:
+                    npc.ai[0] = 0;
+                    break;
+
+                    /*
+                    case 0:
+                        //Spawn animation
+                        SpawnAnimation();
+                        break;
+                    case 1:
+                        //Basic side scythes
+                        SideScythesAttack();
+                        break;
+                    case 2:
+                        //Spinning side scythes
+                        SideScythesAttackSpin();
+                        break;
+                    case 3:
+                        //Scythe blasts
+                        SideBlastsAttack();
+                        break;
+                    case 4:
+                        //More scythe blasts
+                        SideBlastsAttackHard();
+                        break;
+                    case 5:
+                        //Ice spiral
+                        IceSpiralAttack();
+                        break;
+                    case 6:
+                        //Shield bonk
+                        ShieldBonk();
+                        break;
+                    case 7:
+                        npc.ai[0] = 1;
+                        //Slime bonk
+                        //SlimeBonk();
+                        break;
+                    case 8:
+                        npc.ai[0] = 1;
+                        //Moths
+                        //SlimeBonk();
+                        break;
+                    case 9:
+                        npc.ai[0] = 1;
+                        //Sigils
+                        //SlimeBonk();
+                        break;
+                    case 10:
+                        npc.ai[0] = 1;
+                        //LAMP beams
+                        //SlimeBonk();
+                        break;
+                    case 11:
+                        npc.ai[0] = 1;
+                        //LAMP beams
+                        //SlimeBonk();
+                        break;
+                    */
             }
         }
 
@@ -157,6 +218,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //1 sec
         private void SpawnAnimation()
         {
             Player player = Main.player[npc.target];
@@ -179,6 +241,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //3 secs
         private void SideScythesAttack()
         {
             Player player = Main.player[npc.target];
@@ -206,6 +269,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //7 secs 20 ticks
         private void SideScythesAttackSpin()
         {
             Player player = Main.player[npc.target];
@@ -241,6 +305,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //4 secs 20 ticks
         private void SideBlastsAttack()
         {
             Player player = Main.player[npc.target];
@@ -279,6 +344,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //5 secs
         private void SideBlastsAttackHard()
         {
             Player player = Main.player[npc.target];
@@ -321,6 +387,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //8 secs
         private void IceSpiralAttack()
         {
             Player player = Main.player[npc.target];
@@ -374,6 +441,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //2 secs 48 ticks
         private void ShieldBonk()
         {
             Player player = Main.player[npc.target];
@@ -468,9 +536,59 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        private void SlimeBonk()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(0, -1) * 360;
+
+                FlyToPoint(goalPosition, player.velocity / 2, 0.8f, 0.8f);
+            }
+            else
+            {
+                if (npc.ai[1] == 60)
+                {
+                    onSlimeMount = true;
+
+                    npc.width = 40;
+                    npc.position.X -= 11;
+                    npc.height = 64;
+                    drawOffsetY = -24;
+                }
+                else if (npc.ai[1] == 119)
+                {
+                    npc.velocity.Y = 0;
+                    onSlimeMount = false;
+
+                    npc.width = 18;
+                    npc.position.X += 11;
+                    npc.height = 40;
+                    drawOffsetY = 0;
+                }
+                else
+                {
+                    npc.velocity.Y += 0.6f;
+
+                    FlyToPoint(player.Center, player.velocity, 0.05f, 0f);
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 120)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
-            return canShieldBonk;
+            return canShieldBonk || onSlimeMount;
         }
 
         public override void OnHitPlayer(Player target, int damage, bool crit)
@@ -484,21 +602,30 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.velocity.X += npc.direction * 30;
                 canShieldBonk = false;
             }
-        }
-
-        public override void ModifyHitByItem(Player player, Item item, ref int damage, ref float knockback, ref bool crit)
-        {
-            iceShieldCooldown = 60;
-        }
-
-        public override void ModifyHitByProjectile(Projectile projectile, ref int damage, ref float knockback, ref bool crit, ref int hitDirection)
-        {
-            iceShieldCooldown = 60;
+            else if (onSlimeMount)
+            {
+                npc.velocity.Y = -18f;
+            }
         }
 
         public override bool StrikeNPC(ref double damage, int defense, ref float knockback, int hitDirection, ref bool crit)
         {
             damage = 0;
+            iceShieldCooldown = 60;
+            return true;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color drawColor)
+        {
+            if (onSlimeMount)
+            {
+                Texture2D mountTexture = ModContent.GetTexture("Terraria/Mount_Slime");
+                Rectangle frame = mountTexture.Frame(1, 4, 0, 1);
+                SpriteEffects effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                Vector2 mountOffset = new Vector2(npc.spriteDirection * 0, 10);
+                spriteBatch.Draw(mountTexture, npc.Center - Main.screenPosition + mountOffset, frame, drawColor, 0f, frame.Size() / 2f, 1f, effects, 0f);
+            }
+
             return true;
         }
 
@@ -701,7 +828,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.tileCollide = false;
             projectile.ignoreWater = true;
             projectile.scale = 0.9f;
-            projectile.timeLeft = 120;
+            projectile.timeLeft = 130;
 
             projectile.hide = true;
         }
@@ -728,9 +855,9 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
 
-            if (projectile.timeLeft > 120 - 30)
+            if (projectile.timeLeft > 130 - 30)
             {
-                float telegraphAlpha = (30 + projectile.timeLeft - 120) / 30f;
+                float telegraphAlpha = (30 + projectile.timeLeft - 130) / 30f;
                 spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.Purple * telegraphAlpha, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
             }
 
@@ -875,10 +1002,10 @@ namespace DeathsTerminus.NPCs.CataBoss
                     float rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
                     float alphaMultiplier = Math.Max(0, (180 - projectile.timeLeft + j) / 180f);
 
-                    spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(radius * projectile.scale, 0).RotatedBy(rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * alphaMultiplier * 0.03f, rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * j / 360f, new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+                    spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(radius * projectile.scale, 0).RotatedBy(rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * alphaMultiplier * 0.03f, rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + j / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
                 }
 
-                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * projectile.timeLeft / 360f, new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + projectile.timeLeft / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
             }
             return false;
         }
