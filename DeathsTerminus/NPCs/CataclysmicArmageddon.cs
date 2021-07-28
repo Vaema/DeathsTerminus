@@ -11,21 +11,8 @@ using DeathsTerminus.NPCs.CataBoss;
 namespace DeathsTerminus.NPCs
 {
     [AutoloadHead]
-
     public class CataclysmicArmageddon : ModNPC
     {
-
-        public override string Texture
-        {
-            get { return "DeathsTerminus/NPCs/CataclysmicArmageddon"; }
-        }
-
-        public override bool Autoload(ref string name)
-        {
-            name = "Cataclysmic Armageddon";
-            return mod.Properties.Autoload;
-        }
-
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Cataclysmic Armageddon");
@@ -39,17 +26,17 @@ namespace DeathsTerminus.NPCs
             NPCID.Sets.HatOffsetY[npc.type] = 4;
         }
 
-
         public override void SetDefaults()
         {
             npc.townNPC = true;
             npc.friendly = true;
-            npc.width = 64;
-            npc.height = 62;
+            npc.width = 18;
+            npc.height = 40;
+            drawOffsetY = 2;
             npc.aiStyle = (int)AIStyles.Passive;
             npc.damage = 10;
-            npc.defense = 15;
-            npc.lifeMax = 250;
+            npc.defense = 0;
+            npc.lifeMax = 1;
             npc.HitSound = SoundID.NPCHit1;
             npc.DeathSound = SoundID.NPCDeath1;
             npc.knockBackResist = 0.5f;
@@ -75,6 +62,8 @@ namespace DeathsTerminus.NPCs
         public override void AI()
         {
             npc.breath = 200;
+            npc.width = 18;
+            npc.height = 40;
         }
 
         public override string GetChat()
