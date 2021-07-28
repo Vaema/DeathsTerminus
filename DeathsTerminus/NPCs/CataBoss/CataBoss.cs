@@ -18,6 +18,8 @@ namespace DeathsTerminus.NPCs.CataBoss
         //ai[2] is ?
         //ai[3] is ?
 
+        private bool canShieldBonk;
+
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Cataclysmic Armageddon");
@@ -33,7 +35,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.defense = 0;
             npc.lifeMax = 250;
 
-            npc.damage = 0;
+            npc.damage = 160;
             npc.knockBackResist = 0f;
 
             npc.value = Item.buyPrice(platinum: 1);
@@ -70,25 +72,37 @@ namespace DeathsTerminus.NPCs.CataBoss
             switch (npc.ai[0])
             {
                 case 0:
+                    //Spawn animation
                     SpawnAnimation();
                     break;
                 case 1:
+                    //Basic side scythes
                     SideScythesAttack();
                     break;
                 case 2:
+                    //Spinning side scythes
                     SideScythesAttackSpin();
                     break;
                 case 3:
+                    //Scythe blasts
                     SideBlastsAttack();
                     break;
                 case 4:
+                    //More scythe blasts
                     SideBlastsAttackHard();
                     break;
                 case 5:
+                    //Ice spiral
                     IceSpiralAttack();
                     break;
                 case 6:
+                    //Shield bonk
+                    ShieldBonk();
+                    break;
+                case 7:
                     npc.ai[0] = 1;
+                    //Slime bonk
+                    //SlimeBonk();
                     break;
             }
         }
@@ -214,7 +228,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.spriteDirection = npc.direction;
             Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 480;
 
-            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.25f, maxYAcc: 0.25f);
+            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.4f, maxYAcc: 0.4f);
 
             int shotPeriod = 50;
             int numShots = 4;
@@ -252,7 +266,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.spriteDirection = npc.direction;
             Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 480;
 
-            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.25f, maxYAcc: 0.25f);
+            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.4f, maxYAcc: 0.4f);
 
             int shotPeriod = 50;
             int numShots = 4;
@@ -296,7 +310,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
 
-                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.25f, maxYAcc: 0.25f);
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
             }
             else
             {
@@ -320,10 +334,10 @@ namespace DeathsTerminus.NPCs.CataBoss
                     for (int i=0; i<24; i++)
                     {
                         Vector2 targetPoint = npc.Center + new Vector2(1200, 0).RotatedBy(i * MathHelper.TwoPi / 24);
-                        Vector2 launchPoint = targetPoint + new Vector2(1200, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
-                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 12f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer);
-                        launchPoint = targetPoint - new Vector2(1200, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
-                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 12f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer);
+                        Vector2 launchPoint = targetPoint + new Vector2(2400, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 24f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer, ai0: 1);
+                        launchPoint = targetPoint - new Vector2(2400, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 24f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer, ai0: 1);
                     }
                 }
             }
@@ -333,6 +347,57 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
+            }
+        }
+
+        private void ShieldBonk()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] % 84 < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 180;
+
+                FlyToPoint(goalPosition, player.velocity, 0.8f, 0.8f);
+            }
+            else if (npc.ai[1] % 84 == 60)
+            {
+                canShieldBonk = true;
+
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                npc.velocity.X += npc.direction * 15;
+                npc.velocity.Y /= 2;
+            }
+            else if (npc.ai[1] % 84 == 83)
+            {
+                canShieldBonk = false;
+
+                npc.velocity.X -= npc.direction * 15;
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 168)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        public override bool CanHitPlayer(Player target, ref int cooldownSlot)
+        {
+            return canShieldBonk;
+        }
+
+        public override void OnHitPlayer(Player target, int damage, bool crit)
+        {
+            if (canShieldBonk)
+            {
+                npc.direction *= -1;
+                npc.velocity.X += npc.direction * 30;
+                canShieldBonk = false;
             }
         }
 
@@ -514,7 +579,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.ai[0] += 1f;
             if (!(projectile.ai[0] < 30f))
             {
-                if (projectile.ai[0] < 100f)
+                if (projectile.ai[0] < 120f)
                 {
                     projectile.velocity *= 1.06f;
                 }
@@ -696,7 +761,7 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override void AI()
         {
-            projectile.velocity *= 1.04f;
+            projectile.velocity *= projectile.ai[0];
 
             projectile.rotation = projectile.velocity.ToRotation() + MathHelper.PiOver2;
         }
@@ -752,6 +817,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             projectile.ai[0] += 0.01f;
             projectile.rotation += projectile.ai[0];
+            projectile.alpha = projectile.timeLeft * 128 / 60;
         }
 
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
@@ -768,7 +834,7 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             Rectangle frame = texture.Frame(1, 1);
 
-            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(51, 51), projectile.scale, SpriteEffects.None, 0f);
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(46, 51), projectile.scale, SpriteEffects.None, 0f);
 
             return false;
         }
