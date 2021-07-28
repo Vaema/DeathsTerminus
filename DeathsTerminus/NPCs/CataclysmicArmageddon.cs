@@ -36,7 +36,7 @@ namespace DeathsTerminus.NPCs
             npc.aiStyle = (int)AIStyles.Passive;
             npc.damage = 10;
             npc.defense = 0;
-            npc.lifeMax = 1;
+            npc.lifeMax = 250;
             npc.HitSound = SoundID.NPCHit1;
             npc.DeathSound = SoundID.NPCDeath1;
             npc.knockBackResist = 0.5f;
@@ -186,6 +186,13 @@ namespace DeathsTerminus.NPCs
                 nextSlot++;
             }
 
+        }
+
+        public override bool StrikeNPC(ref double damage, int defense, ref float knockback, int hitDirection, ref bool crit)
+        {
+            npc.life = 0;
+            npc.checkDead();
+            return true;
         }
     }
 }
