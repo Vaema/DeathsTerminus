@@ -37,10 +37,10 @@ namespace DeathsTerminus.Items
 		   ref float maxCanAscendMultiplier, ref float maxAscentMultiplier, ref float constantAscend)
 		{
 			player.wingsLogic = 22;
-			ascentWhenFalling = 0.5f;
-			ascentWhenRising = 0.1f;
+			ascentWhenFalling = 0.85f;
+			ascentWhenRising = 0.15f;
 			maxCanAscendMultiplier = 1f;
-			maxAscentMultiplier = 2f;
+			maxAscentMultiplier = 3f;
 			constantAscend = 0.15f;
 		}
 
@@ -53,8 +53,8 @@ namespace DeathsTerminus.Items
 			}
 			else
 			{
-				speed = 6.5f;
-				acceleration *= 1.5f;
+				speed = 9f;
+				acceleration *= 2.5f;
 			}
 		}
 	}
