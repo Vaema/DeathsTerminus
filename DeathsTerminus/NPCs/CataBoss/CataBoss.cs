@@ -15,8 +15,7 @@ namespace DeathsTerminus.NPCs.CataBoss
     {
         //ai[0] is attack type
         //ai[1] is attack timer
-        //ai[2] is ?
-        //ai[3] is ?
+        //ai[2] and ai[3] are memory for goal points
 
         private bool canShieldBonk;
         private bool holdingShield;
@@ -91,6 +90,8 @@ namespace DeathsTerminus.NPCs.CataBoss
                 iceShieldCooldown--;
             }
 
+            npc.life = npc.lifeMax;
+
             switch (npc.ai[0])
             {
                 case 0:
@@ -124,69 +125,24 @@ namespace DeathsTerminus.NPCs.CataBoss
                     SlimeBonk();
                     break;
                 case 9:
+                    //10 secs each
+                    MothsAndLampAttack();
+                    break;
+                case 10:
                     //5 secs each
                     SideBlastsAttackHard();
                     break;
-                case 10:
+                case 11:
                     npc.ai[0] = 0;
                     break;
-
-                    /*
-                    case 0:
-                        //Spawn animation
-                        SpawnAnimation();
-                        break;
-                    case 1:
-                        //Basic side scythes
-                        SideScythesAttack();
-                        break;
-                    case 2:
-                        //Spinning side scythes
-                        SideScythesAttackSpin();
-                        break;
-                    case 3:
-                        //Scythe blasts
-                        SideBlastsAttack();
-                        break;
-                    case 4:
-                        //More scythe blasts
-                        SideBlastsAttackHard();
-                        break;
-                    case 5:
-                        //Ice spiral
-                        IceSpiralAttack();
-                        break;
-                    case 6:
-                        //Shield bonk
-                        ShieldBonk();
-                        break;
-                    case 7:
-                        npc.ai[0] = 1;
-                        //Slime bonk
-                        //SlimeBonk();
-                        break;
-                    case 8:
-                        npc.ai[0] = 1;
-                        //Moths
-                        //SlimeBonk();
-                        break;
-                    case 9:
-                        npc.ai[0] = 1;
-                        //Sigils
-                        //SlimeBonk();
-                        break;
-                    case 10:
-                        npc.ai[0] = 1;
-                        //LAMP beams
-                        //SlimeBonk();
-                        break;
-                    case 11:
-                        npc.ai[0] = 1;
-                        //LAMP beams
-                        //SlimeBonk();
-                        break;
-                    */
             }
+            
+
+            //Attacks I still need to do
+            //Moths
+            //Sigils
+            //LAMP beams
+            //Sprocket attack
         }
 
         private void FlyToPoint(Vector2 goalPoint, Vector2 goalVelocity, float maxXAcc = 0.5f, float maxYAcc = 0.5f)
@@ -586,6 +542,73 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        private void MothsAndLampAttack()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 1080;
+
+                FlyToPoint(goalPosition, player.velocity, 0.8f, 0.8f);
+            }
+            else
+            {
+                if (npc.ai[1] == 60)
+                {
+                    npc.ai[2] = npc.Center.X;
+                    npc.ai[3] = npc.Center.Y;
+
+                    //need to make ray of sunshine cause screenshake
+
+                    if (Main.netMode != 1)
+                    {
+                        Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<SigilArena>(), 80, 0f, Main.myPlayer);
+                        Projectile.NewProjectile(npc.Center + new Vector2(npc.direction, 0) * 1500, new Vector2(-npc.direction * 5, 0), ProjectileType<SunLamp>(), 80, 0f, Main.myPlayer);
+                    }
+                }
+
+                if (Main.netMode != 1 && npc.ai[1] >= 120 && npc.ai[1] <= 510 && npc.ai[1] % 5 == 0)
+                {
+                    Vector2 arenaCenter = new Vector2(npc.ai[2], npc.ai[3]);
+
+                    //ray X position
+                    float relativeRayPosition = npc.direction * 1500 - npc.direction * 5 * (npc.ai[1] + 30 - 60);
+
+                    //angle of the arena still available
+                    float availableAngle = (float)Math.Acos(relativeRayPosition / 1200f);
+                    if (npc.direction == 1)
+                    {
+                        availableAngle = MathHelper.Pi - availableAngle;
+                    }
+                    if (availableAngle > MathHelper.Pi / 2)
+                    {
+                        availableAngle = MathHelper.Pi / 2;
+                    }
+
+                    float availableHeight = (float)Math.Sqrt(1200f * 1200f - relativeRayPosition * relativeRayPosition);
+
+                    float shotAngle = -npc.direction * availableAngle * ((npc.ai[1] / 1.618f / 5 % 1) * 2 - 1);
+                    float goalHeight = arenaCenter.Y + -npc.direction * shotAngle / availableAngle * availableHeight;
+
+                    Projectile.NewProjectile(arenaCenter + new Vector2(-1800f * npc.direction, 0f).RotatedBy(shotAngle), new Vector2(32f * npc.direction, 0).RotatedBy(shotAngle), ProjectileType<BabyMothronProjectile>(), 80, 0f, Main.myPlayer, ai0: goalHeight, ai1: npc.direction * 1500 - npc.direction * 5 * (npc.ai[1] - 60) + arenaCenter.X);
+                }
+
+                Vector2 goalPosition = new Vector2(npc.ai[2], npc.ai[3]) + new Vector2(-npc.direction, 0) * 1080;
+
+                FlyToPoint(goalPosition, Vector2.Zero, 0.25f, 0.25f);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 600)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
             return canShieldBonk || onSlimeMount;
@@ -615,8 +638,15 @@ namespace DeathsTerminus.NPCs.CataBoss
             return true;
         }
 
+        public override bool? DrawHealthBar(byte hbPosition, ref float scale, ref Vector2 position)
+        {
+            return false;
+        }
+
         public override bool PreDraw(SpriteBatch spriteBatch, Color drawColor)
         {
+            //still need to do a trail effect for everything
+
             if (onSlimeMount)
             {
                 Texture2D mountTexture = ModContent.GetTexture("Terraria/Mount_Slime");
@@ -953,18 +983,21 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.tileCollide = false;
             projectile.ignoreWater = true;
             projectile.scale = 1f;
-            projectile.timeLeft = 360;
+            projectile.timeLeft = 420;
 
             projectile.hide = true;
         }
 
         public override void AI()
         {
-            float angle = MathHelper.TwoPi * projectile.timeLeft / 360f;
+            if (projectile.timeLeft <= 360)
+            {
+                float angle = MathHelper.TwoPi * projectile.timeLeft / 360f;
 
-            //set radius and rotation (replace with more dynamic AI later)
-            projectile.ai[1] = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
-            projectile.rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
+                //set radius and rotation (replace with more dynamic AI later)
+                projectile.ai[1] = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
+                projectile.rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
+            }
         }
 
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
@@ -995,7 +1028,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 Rectangle frame = texture.Frame(1, 3);
 
-                for (int j = projectile.timeLeft; j >= 0; j--)
+                for (int j = Math.Min(projectile.timeLeft, 360); j >= Math.Max(0, projectile.timeLeft - 180); j--)
                 {
                     float angle = MathHelper.TwoPi * j / 360f;
                     float radius = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
@@ -1005,7 +1038,8 @@ namespace DeathsTerminus.NPCs.CataBoss
                     spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(radius * projectile.scale, 0).RotatedBy(rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * alphaMultiplier * 0.03f, rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + j / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
                 }
 
-                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + projectile.timeLeft / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+                if (projectile.timeLeft <= 360)
+                    spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + projectile.timeLeft / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
             }
             return false;
         }
@@ -1121,6 +1155,275 @@ namespace DeathsTerminus.NPCs.CataBoss
             Rectangle frame = texture.Frame(1, 1);
 
             spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(46, 51), projectile.scale, SpriteEffects.None, 0f);
+
+            return false;
+        }
+    }
+
+    public class SigilArena : ModProjectile
+    {
+        private static int sigilRadius = 27;
+        private static int sigilCount = 80;
+
+
+        //the arena!
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Orbiting Sigil");
+            Main.projFrames[projectile.type] = 4;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 2;
+            projectile.height = 2;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = false;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.scale = 0f;
+            projectile.timeLeft = 600;
+        }
+
+        public override void AI()
+        {
+            //grow to full size
+            if (projectile.ai[0] < 60)
+            {
+                projectile.scale += 1 / 60f;
+                projectile.hostile = false;
+            }
+            else if (projectile.timeLeft < 60)
+            {
+                projectile.scale -= 1 / 60f;
+                projectile.hostile = false;
+            }
+            else
+            {
+                projectile.scale = 1f;
+                projectile.hostile = true;
+            }
+
+            //rotation increment
+            projectile.rotation += 0.01f;
+
+            //set radius and center (replace with more dynamic AI later)
+            projectile.ai[1] = 1200 + 20 * Math.Max(60 - projectile.ai[0], 0) + 20 * Math.Max(60 - projectile.timeLeft, 0);
+
+            if (projectile.scale >= 1)
+            {
+                if ((Main.LocalPlayer.Center - projectile.Center).Length() > projectile.ai[1])
+                {
+                    Vector2 normal = (Main.LocalPlayer.Center - projectile.Center).SafeNormalize(Vector2.Zero);
+                    Vector2 relativeVelocity = Main.LocalPlayer.velocity - projectile.velocity;
+
+                    Main.LocalPlayer.Center = projectile.Center + normal * projectile.ai[1];
+
+                    if (relativeVelocity.X * normal.X + relativeVelocity.Y * normal.Y > 0)
+                    {
+                        Main.LocalPlayer.velocity -= normal * (relativeVelocity.X * normal.X + relativeVelocity.Y * normal.Y);
+                    }
+                }
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 3)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 4)
+                {
+                    projectile.frame = 0;
+                }
+            }
+
+            projectile.ai[0]++;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            for (int i = 0; i < sigilCount; i++)
+            {
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount);
+                float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+                float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+                if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < sigilRadius)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            for (int i = 0; i < sigilCount; i++)
+            {
+                spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount), new Rectangle(0, 96 * projectile.frame, 66, 96), Color.White * projectile.scale, projectile.rotation + i * MathHelper.TwoPi / sigilCount, new Vector2(33, 65), projectile.scale, SpriteEffects.None, 0f);
+            }
+            return false;
+        }
+    }
+
+    public class SunLamp : ModProjectile
+    {
+        //demon scythe but no dust and it passes through tiles
+        public override string Texture => "DeathsTerminus/NPCs/CataBoss/CataBossScytheTelegraph";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Sun Lamp");
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 48;
+            projectile.height = 48;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.timeLeft = 540;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            DelegateMethods.v3_1 = new Vector3(255 / 128f, 220 / 128f, 64 / 128f);
+            Utils.PlotTileLine(projectile.Center + new Vector2(0, 2048), projectile.Center + new Vector2(0, -2048), 26, DelegateMethods.CastLight);
+
+            if (projectile.scale < 1f && projectile.timeLeft > 60)
+            {
+                projectile.scale += 1 / 60f;
+            }
+            else if (projectile.timeLeft <= 60)
+            {
+                projectile.scale -= 1 / 60f;
+                projectile.velocity.X *= 0.95f;
+            }
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            float point = 0f;
+            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center + new Vector2(0, 2048), projectile.Center + new Vector2(0, -2048), 64 * projectile.scale, ref point);
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            if (projectile.scale <= 0.1f)
+            {
+                return false;
+            }
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            float numLayers = 12;
+
+            for (int i = 0; i < numLayers; i++)
+            {
+                float colorAmount = (numLayers - i) / numLayers;
+                Color color = new Color((int)(255 * colorAmount + 255 * (1 - colorAmount)), (int)(195 * colorAmount + 255 * (1 - colorAmount)), (int)(32 * colorAmount + 255 * (1 - colorAmount)));
+                float alpha = 0.3f;
+
+                Vector2 positionOffset = new Vector2(projectile.scale * 16, 0).RotatedBy(5 * i * MathHelper.TwoPi / numLayers + projectile.timeLeft * 0.1f);
+
+                spriteBatch.Draw(texture, positionOffset + projectile.Center - Main.screenPosition, texture.Frame(), color * alpha, projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(48 * projectile.scale, 4096), SpriteEffects.None, 0f);
+            }
+
+            return false;
+        }
+    }
+
+    public class BabyMothronProjectile : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_479";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Baby Mothron");
+            Main.projFrames[projectile.type] = 3;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 36;
+            projectile.height = 36;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 400;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            if (projectile.timeLeft > 400 - 33)
+            {
+                projectile.velocity *= 0.95f;
+            }
+            else
+            {
+                projectile.velocity.Y += projectile.velocity.Y * projectile.velocity.Y / (projectile.Center.Y - projectile.ai[0]);
+
+                projectile.velocity = projectile.velocity.SafeNormalize(Vector2.Zero) * 6;
+            }
+            projectile.rotation = projectile.velocity.ToRotation() + MathHelper.Pi;
+            projectile.direction = projectile.velocity.X > 0 ? -1 : 1;
+            projectile.spriteDirection = projectile.direction;
+
+            //test for death via ray of sunshine
+            projectile.ai[1] += 5 * projectile.direction;
+            if (projectile.ai[1] < projectile.Center.X ^ projectile.direction == 1)
+            {
+                projectile.Kill();
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 4)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 3)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 3, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White, projectile.rotation, frame.Size() / 2, projectile.scale, effects, 0f);
 
             return false;
         }
