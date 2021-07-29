@@ -366,10 +366,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                 if (npc.ai[1] == 60 && Main.netMode != 1)
                 {
                     Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<IceShield>(), 80, 0f, Main.myPlayer);
-                }
-
-                if (npc.ai[1] == 120 && Main.netMode != 1)
-                {
                     for (int i = -1; i <= 1; i++)
                     {
                         Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<RotatingIceShards>(), 80, 0f, Main.myPlayer, ai0: i);
@@ -570,7 +566,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                 }
 
-                if (Main.netMode != 1 && npc.ai[1] >= 120 && npc.ai[1] <= 510 && npc.ai[1] % 5 == 0)
+                if (Main.netMode != 1 && npc.ai[1] >= 90 && npc.ai[1] <= 480 && npc.ai[1] % 5 == 0)
                 {
                     Vector2 arenaCenter = new Vector2(npc.ai[2], npc.ai[3]);
 
@@ -1183,19 +1179,14 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.hostile = false;
             projectile.penetrate = -1;
             projectile.tileCollide = false;
-            projectile.scale = 0f;
+            projectile.scale = 2f;
             projectile.timeLeft = 600;
         }
 
         public override void AI()
         {
-            //grow to full size
-            if (projectile.ai[0] < 60)
-            {
-                projectile.scale += 1 / 60f;
-                projectile.hostile = false;
-            }
-            else if (projectile.timeLeft < 60)
+            //shrink when done
+            if (projectile.timeLeft < 60)
             {
                 projectile.scale -= 1 / 60f;
                 projectile.hostile = false;
@@ -1210,16 +1201,16 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.rotation += 0.01f;
 
             //set radius and center (replace with more dynamic AI later)
-            projectile.ai[1] = 1200 + 20 * Math.Max(60 - projectile.ai[0], 0) + 20 * Math.Max(60 - projectile.timeLeft, 0);
+            projectile.ai[1] = 1200 + Math.Max(0, 20 * (60 - projectile.ai[0]));
 
             if (projectile.scale >= 1)
             {
-                if ((Main.LocalPlayer.Center - projectile.Center).Length() > projectile.ai[1])
+                if ((Main.LocalPlayer.Center - projectile.Center).Length() > projectile.ai[1] * projectile.scale)
                 {
                     Vector2 normal = (Main.LocalPlayer.Center - projectile.Center).SafeNormalize(Vector2.Zero);
                     Vector2 relativeVelocity = Main.LocalPlayer.velocity - projectile.velocity;
 
-                    Main.LocalPlayer.Center = projectile.Center + normal * projectile.ai[1];
+                    Main.LocalPlayer.Center = projectile.Center + normal * projectile.ai[1] * projectile.scale;
 
                     if (relativeVelocity.X * normal.X + relativeVelocity.Y * normal.Y > 0)
                     {
