@@ -22,9 +22,46 @@ namespace DeathsTerminus
     {
         public bool LostStar;
 
+        public int screenShakeTime = 0;
+        public Vector2 screenShakeModifier = Vector2.Zero;
+        public Vector2 screenShakeVelocity = Vector2.One;
+
+        public override void ModifyScreenPosition()
+        {
+            Main.screenPosition += screenShakeModifier;
+        }
+
+        public override void PostUpdate()
+        {
+            float maxScreenShakeDistance = 6;
+            float screenShakeSpeed = 4;
+
+            if (screenShakeTime > 0)
+            {
+                screenShakeVelocity.Normalize();
+                screenShakeVelocity *= screenShakeSpeed;
+                screenShakeModifier += screenShakeVelocity;
+                if (screenShakeModifier.Length() >= maxScreenShakeDistance)
+                {
+                    screenShakeModifier.Normalize();
+                    screenShakeModifier *= maxScreenShakeDistance;
+                    screenShakeVelocity = -screenShakeSpeed * screenShakeModifier.SafeNormalize(Vector2.Zero).RotatedByRandom(MathHelper.PiOver2);
+                }
+            }
+            else
+            {
+                screenShakeModifier = screenShakeModifier.SafeNormalize(Vector2.Zero) * Math.Max(screenShakeModifier.Length() - screenShakeSpeed, 0);
+            }
+        }
+
         public override void ResetEffects()
         {
             LostStar = false;
+
+            if (screenShakeTime > 0)
+            {
+                screenShakeTime--;
+            }
         }
 
         public override void Hurt(bool pvp, bool quiet, double damage, int hitDirection, bool crit)

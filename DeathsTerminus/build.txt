@@ -1,4 +1,5 @@
 displayName = Death's Terminus
-author = Astrum Genesis, turingcomplete30
+author = Astrum Genesis
 version = 0.1
 includePDB = false
+hideResources = true
