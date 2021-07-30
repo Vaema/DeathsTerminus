@@ -102,7 +102,7 @@ namespace DeathsTerminus.NPCs
                 //Spawn Boss Here
                 //npc.Transform(mod.NPCType("AstrumBoss"));
 
-                string message = "Don't hold back now, or I'll hold it against you for the rest of your life... which won't be very long anyways.";
+                string message = "Insert cool dialogue here";
                 string message2 = "Astrum Genesis has awoken!";
 
                 if (Main.netMode == NetmodeID.SinglePlayer)
