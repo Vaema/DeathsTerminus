@@ -133,6 +133,21 @@ namespace DeathsTerminus.NPCs
 
             }
 
+            int astrum = NPC.FindFirstNPC(ModContent.NPCType<AstrumGenesis>());
+            if (astrum != -1)
+            {
+                dialogue.Add("If you see Astrum, can you laugh at him for me?");
+            }
+
+            int solar = NPC.FindFirstNPC(NPCID.LunarTowerSolar);
+            int nebula = NPC.FindFirstNPC(NPCID.LunarTowerNebula);
+            int vortex = NPC.FindFirstNPC(NPCID.LunarTowerVortex);
+            int stardust = NPC.FindFirstNPC(NPCID.LunarTowerStardust);
+            if ((solar != -1) || (nebula != -1) || (vortex != -1) || (stardust != -1))
+            {
+                dialogue.Add("I swear, I had nothing to do with this!");
+            }
+
             return Main.rand.Next(dialogue);
         }
 
