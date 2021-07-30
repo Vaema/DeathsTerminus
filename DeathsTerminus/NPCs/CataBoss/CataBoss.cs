@@ -7,6 +7,7 @@ using DeathsTerminus.Enums;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DeathsTerminus.NPCs.CataBoss
 {
@@ -26,6 +27,9 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             DisplayName.SetDefault("Cataclysmic Armageddon");
             Main.npcFrameCount[npc.type] = 5;
+
+            NPCID.Sets.TrailCacheLength[npc.type] = 5;
+            NPCID.Sets.TrailingMode[npc.type] = 2;
         }
 
         public override void SetDefaults()
@@ -140,10 +144,14 @@ namespace DeathsTerminus.NPCs.CataBoss
                     HeavenPetAttack();
                     break;
                 case 11:
+                    //1 sec each
+                    Phase1To2Animation();
+                    break;
+                case 12:
                     //5 secs each
                     SideBlastsAttackHard();
                     break;
-                case 12:
+                case 13:
                     npc.ai[0] = 0;
                     break;
             }
@@ -346,12 +354,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                 int direction = npc.ai[1] % (shotPeriod * 2) == 60 % (shotPeriod * 2) ? 1 : -1;
                 Vector2 shotVelocity = (player.Center - npc.Center).SafeNormalize(Vector2.Zero).RotatedBy(direction * Math.Asin(angleRatio)) * shotSpeed;
 
-                Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
             }
 
             if (npc.ai[1] >= 90 && npc.ai[1] % shotPeriod == 90 % shotPeriod)
@@ -546,21 +554,28 @@ namespace DeathsTerminus.NPCs.CataBoss
                     npc.height = 64;
                     drawOffsetY = -15;
                 }
-                else if (npc.ai[1] == 119)
+                else if (onSlimeMount)
                 {
-                    npc.velocity.Y = 0;
-                    onSlimeMount = false;
+                    if (npc.ai[1] < 119 && npc.Hitbox.Top - 300 <= player.Hitbox.Bottom)
+                    {
+                        npc.velocity.Y += 0.9f;
 
-                    npc.width = 18;
-                    npc.position.X += 11;
-                    npc.height = 40;
-                    drawOffsetY = -5;
+                        FlyToPoint(player.Center, player.velocity, 0.05f, 0f);
+                    }
+                    else
+                    {
+                        npc.velocity.Y = 0;
+                        onSlimeMount = false;
+
+                        npc.width = 18;
+                        npc.position.X += 11;
+                        npc.height = 40;
+                        drawOffsetY = -5;
+                    }
                 }
                 else
                 {
-                    npc.velocity.Y += 0.9f;
-
-                    FlyToPoint(player.Center, player.velocity, 0.05f, 0f);
+                    npc.velocity *= 0.98f;
                 }
             }
 
@@ -683,6 +698,25 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        //1 sec
+        private void Phase1To2Animation()
+        {
+            Player player = Main.player[npc.target];
+
+            npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+            npc.spriteDirection = npc.direction;
+            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 240;
+
+            FlyToPoint(goalPosition, Vector2.Zero);
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 60)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
             return canShieldBonk || onSlimeMount;
@@ -736,41 +770,54 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             //still need to do a trail effect for everything
 
-            SpriteEffects effects;
+            int trailLength = 1;
+            if (canShieldBonk) trailLength = 5;
+            if (onSlimeMount) trailLength = 5;
 
-            if (onSlimeMount)
+            for (int i = trailLength - 1; i >= 0; i--)
             {
-                Texture2D mountTexture = ModContent.GetTexture("Terraria/Mount_Slime");
-                Rectangle frame = mountTexture.Frame(1, 4, 0, 1);
-                effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-                Vector2 mountOffset = new Vector2(npc.spriteDirection * 0, 10);
-                spriteBatch.Draw(mountTexture, npc.Center - Main.screenPosition + mountOffset, frame, Color.White, 0f, frame.Size() / 2f, 1f, effects, 0f);
-            }
+                if (i == 0 || i % 2 == npc.ai[1] % 2)
+                {
+                    float alpha = (trailLength - i) / (float)trailLength;
+                    Vector2 center = npc.oldPos[i] + new Vector2(npc.width, npc.height) / 2;
 
-            Texture2D npcTexture = Main.npcTexture[npc.type];
-            effects = npc.spriteDirection == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            Vector2 npcOffset = new Vector2(- npc.spriteDirection * 3, drawOffsetY);
-            spriteBatch.Draw(npcTexture, npc.Center - Main.screenPosition + npcOffset, npc.frame, Color.White, 0f, npc.frame.Size() / 2f, 1f, effects, 0f);
+                    SpriteEffects effects;
 
-            if (holdingShield)
-            {
-                Texture2D shieldTexture = ModContent.GetTexture("Terraria/Acc_Shield_5");
-                Rectangle frame = shieldTexture.Frame(1, 20);
-                effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-                Vector2 shieldOffset = new Vector2(npc.spriteDirection * 3, -4);
+                    if (onSlimeMount)
+                    {
+                        Texture2D mountTexture = ModContent.GetTexture("Terraria/Mount_Slime");
+                        Rectangle frame = mountTexture.Frame(1, 4, 0, 1);
+                        effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                        Vector2 mountOffset = new Vector2(npc.spriteDirection * 0, 10);
+                        spriteBatch.Draw(mountTexture, center - Main.screenPosition + mountOffset, frame, Color.White * alpha, 0f, frame.Size() / 2f, 1f, effects, 0f);
+                    }
 
-                spriteBatch.Draw(shieldTexture, npc.Center - Main.screenPosition + shieldOffset, frame, Color.White, 0f, frame.Size() / 2f, 1f, effects, 0f);
-            }
+                    Texture2D npcTexture = Main.npcTexture[npc.type];
+                    effects = npc.spriteDirection == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+                    Vector2 npcOffset = new Vector2(-npc.spriteDirection * 3, drawOffsetY);
+                    spriteBatch.Draw(npcTexture, center - Main.screenPosition + npcOffset, npc.frame, Color.White * alpha, 0f, npc.frame.Size() / 2f, 1f, effects, 0f);
 
-            if (iceShieldCooldown > 0)
-            {
-                Texture2D shieldTexture = ModContent.GetTexture("Terraria/Projectile_464");
-                Rectangle frame = shieldTexture.Frame();
-                effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-                float alpha = iceShieldCooldown / 120f;
-                Vector2 shieldOffset = new Vector2(0, -2);
+                    if (holdingShield)
+                    {
+                        Texture2D shieldTexture = ModContent.GetTexture("Terraria/Acc_Shield_5");
+                        Rectangle frame = shieldTexture.Frame(1, 20);
+                        effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                        Vector2 shieldOffset = new Vector2(npc.spriteDirection * 3, -4);
 
-                spriteBatch.Draw(shieldTexture, npc.Center - Main.screenPosition + shieldOffset, frame, Color.White * alpha, 0f, frame.Size() / 2f, 1f, effects, 0f);
+                        spriteBatch.Draw(shieldTexture, center - Main.screenPosition + shieldOffset, frame, Color.White * alpha, 0f, frame.Size() / 2f, 1f, effects, 0f);
+                    }
+
+                    if (iceShieldCooldown > 0)
+                    {
+                        Texture2D shieldTexture = ModContent.GetTexture("Terraria/Projectile_464");
+                        Rectangle frame = shieldTexture.Frame();
+                        effects = npc.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                        float shieldAlpha = iceShieldCooldown / 120f;
+                        Vector2 shieldOffset = new Vector2(0, -2);
+
+                        spriteBatch.Draw(shieldTexture, center - Main.screenPosition + shieldOffset, frame, Color.White * shieldAlpha * alpha, 0f, frame.Size() / 2f, 1f, effects, 0f);
+                    }
+                }
             }
 
             return false;
@@ -802,6 +849,26 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Demon Scythe");
+            /*
+            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 64, 16, false, SurfaceFormat.Color);
+			System.Collections.Generic.List<Color> list = new System.Collections.Generic.List<Color>();
+			for (int j = 0; j < texture.Height; j++)
+			{
+				for (int i = 0; i < texture.Width; i++)
+				{
+					float x = i / (float)(texture.Width - 1);
+                    float y = j / (float)(texture.Height - 1);
+
+                    int r = 255;
+					int g = 255;
+					int b = 255;
+					int alpha = (int)(255 * (1 - x) * 4 * y * (1 - y));
+
+					list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+				}
+			}
+			texture.SetData(list.ToArray());
+			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBossScytheTelegraph.png", FileMode.Create), texture.Width, texture.Height);*/
         }
 
         public override void SetDefaults()
@@ -841,12 +908,19 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
-            spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
-
-            if (projectile.timeLeft > 130 - 30)
+            if (projectile.ai[1] == 0)
             {
-                float telegraphAlpha = (30 + projectile.timeLeft - 130) / 30f;
-                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.Purple * telegraphAlpha, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+                spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
+
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Purple * 0.25f, projectile.velocity.ToRotation(), new Vector2(0, 8), new Vector2(projectile.velocity.Length(), projectile.width / 16f), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Purple * 0.25f, (-projectile.velocity).ToRotation(), new Vector2(0, 8), new Vector2(projectile.width / 128f, projectile.width / 16f), SpriteEffects.None, 0f);
+            }
+            else if (projectile.ai[1] == 1)
+            {
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataEclipseScythe"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
+
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Orange * 0.25f, projectile.velocity.ToRotation(), new Vector2(0, 8), new Vector2(projectile.velocity.Length(), projectile.width / 16f), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Orange * 0.25f, (-projectile.velocity).ToRotation(), new Vector2(0, 8), new Vector2(projectile.width / 128f, projectile.width / 16f), SpriteEffects.None, 0f);
             }
 
             return false;
@@ -890,9 +964,9 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             if (projectile.ai[0] >= 30 && (projectile.ai[0] - 30) % 7 == 0 && Main.netMode != 1)
             {
-                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
-                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
+                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: projectile.ai[1]);
+                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero).RotatedBy(MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: projectile.ai[1]);
+                Projectile.NewProjectile(projectile.Center, projectile.velocity.SafeNormalize(Vector2.Zero).RotatedBy(-MathHelper.PiOver2) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: projectile.ai[1]);
             }
         }
 
@@ -903,12 +977,17 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
-            spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
-
-            if (projectile.timeLeft > 160 - 30)
+            if (projectile.ai[1] == 0)
             {
-                float telegraphAlpha = (30 + projectile.timeLeft - 160) / 30f;
-                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.Purple * telegraphAlpha, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+                spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
+
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 1), Color.Purple, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(projectile.velocity.Length(), 1), SpriteEffects.None, 0f);
+            }
+            else if (projectile.ai[1] == 1)
+            {
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataEclipseScythe"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
+
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 1), Color.Orange, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(projectile.velocity.Length(), 1), SpriteEffects.None, 0f);
             }
 
             return false;
@@ -1217,11 +1296,30 @@ namespace DeathsTerminus.NPCs.CataBoss
     public class SunLamp : ModProjectile
     {
         //demon scythe but no dust and it passes through tiles
-        public override string Texture => "DeathsTerminus/NPCs/CataBoss/CataBossScytheTelegraph";
-
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Sun Lamp");
+            /*
+            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 1, false, SurfaceFormat.Color);
+			System.Collections.Generic.List<Color> list = new System.Collections.Generic.List<Color>();
+			for (int i = 0; i < texture.Width; i++)
+			{
+				for (int j = 0; j < texture.Height; j++)
+				{
+					float x = i / (float)(texture.Width - 1);
+
+                    float index = 4 * x * (1 - x);
+
+                    int r = 255;
+					int g = 255 - (int)(64 * (1 - index));
+					int b = 255 - (int)(255 * (1 - index));
+					int alpha = (int)(255 * index);
+
+					list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+				}
+			}
+			texture.SetData(list.ToArray());
+			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);*/
         }
 
         public override void SetDefaults()
@@ -1288,24 +1386,9 @@ namespace DeathsTerminus.NPCs.CataBoss
         //need to do new visuals for this
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
-            if (projectile.scale <= 0.1f)
-            {
-                return false;
-            }
             Texture2D texture = Main.projectileTexture[projectile.type];
 
-            float numLayers = 12;
-
-            for (int i = 0; i < numLayers; i++)
-            {
-                float colorAmount = (numLayers - i) / numLayers;
-                Color color = new Color((int)(255 * colorAmount + 255 * (1 - colorAmount)), (int)(195 * colorAmount + 255 * (1 - colorAmount)), (int)(32 * colorAmount + 255 * (1 - colorAmount)));
-                float alpha = 0.3f;
-
-                Vector2 positionOffset = new Vector2(projectile.scale * 16, 0).RotatedBy(5 * i * MathHelper.TwoPi / numLayers + projectile.timeLeft * 0.1f);
-
-                spriteBatch.Draw(texture, positionOffset + projectile.Center - Main.screenPosition, texture.Frame(), color * alpha, projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(48 * projectile.scale, 4096), SpriteEffects.None, 0f);
-            }
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, texture.Frame(), Color.White, projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
 
             return false;
         }
@@ -1540,7 +1623,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 //draw the prism
                 //adapted from last prism drawcode
                 Texture2D prismTexture = ModContent.GetTexture("Terraria/Projectile_633");
-                frame = prismTexture.Frame(1, 5, 0, (projectile.timeLeft / 2) % 5);
+                frame = prismTexture.Frame(1, 5, 0, (projectile.timeLeft / (projectile.timeLeft <= 600 - 60 ? 1 : 3)) % 5);
                 effects = SpriteEffects.None;
                 Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(20 * projectile.scale, 0).RotatedBy(projectile.rotation);
 
@@ -1559,8 +1642,8 @@ namespace DeathsTerminus.NPCs.CataBoss
                 if (projectile.timeLeft > 600 - 60)
                 {
                     //draw the telegraph line
-                    float telegraphAlpha = (60 + projectile.timeLeft - 600) / 60f;
-                    spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+                    float telegraphAlpha = (60 + projectile.timeLeft - 600) / 30f * (600 - projectile.timeLeft) / 30f;
+                    spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/HeavenPetProjectileTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
                 }
                 else
                 {
@@ -1577,7 +1660,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                         Color value42 = Main.hslToRgb(i / 6f, 1f, 0.5f);
                         value42.A = 0;
 
-                        Vector2 drawOffset = new Vector2(4,0).RotatedBy(projectile.timeLeft / 0.1f + i * MathHelper.TwoPi / 6);
+                        Vector2 drawOffset = new Vector2(4,0).RotatedBy(projectile.timeLeft * 0.5f + i * MathHelper.TwoPi / 6);
 
                         //start position
                         Vector2 value45 = projectile.Center.Floor() + drawOffset + new Vector2(36 * projectile.scale, 0).RotatedBy(projectile.rotation);
