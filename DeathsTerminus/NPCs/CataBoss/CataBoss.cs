@@ -148,10 +148,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                     Phase1To2Animation();
                     break;
                 case 12:
+                case 19:
                     //7.3333 secs each
                     SideScythesAttackHard();
                     break;
                 case 13:
+                case 16:
                     //3 secs each
                     SideSuperScythesAttack();
                     break;
@@ -160,6 +162,18 @@ namespace DeathsTerminus.NPCs.CataBoss
                     SideBlastsAttackHard();
                     break;
                 case 15:
+                    //12 secs each
+                    IceSpiralAttackHard();
+                    break;
+                case 17:
+                    //5 secs each
+                    ShieldBonkHard();
+                    break;
+                case 18:
+                    //10 secs each
+                    SlimeBonkHard();
+                    break;
+                case 20:
                     npc.ai[0] = 0;
                     break;
             }
@@ -497,7 +511,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + new Vector2(0, -1) * 360;
 
-                FlyToPoint(goalPosition, player.velocity, 1f, 3f);
+                FlyToPoint(goalPosition, player.velocity, 3f, 1f);
             }
             else
             {
@@ -508,6 +522,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     onSlimeMount = true;
 
                     if (npc.velocity.Y < 0) npc.velocity.Y /= 2;
+                    npc.velocity.X = player.velocity.X;
 
                     npc.width = 40;
                     npc.position.X -= 11;
@@ -516,7 +531,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 }
                 else if (onSlimeMount)
                 {
-                    if (npc.ai[1] < 119 && (npc.Center - player.Center).Length() < 1000)
+                    if (npc.ai[1] < 119 && (npc.velocity.Y < 0 || npc.Hitbox.Top - 300 < player.Hitbox.Bottom))
                     {
                         npc.velocity.Y += 0.9f;
 
@@ -720,7 +735,6 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
-        //3 secs
         private void SideSuperScythesAttack()
         {
             Player player = Main.player[npc.target];
@@ -728,7 +742,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (npc.ai[1] < 60)
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
             npc.spriteDirection = npc.direction;
-            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 480;
+            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 450;
 
             FlyToPoint(goalPosition, Vector2.Zero);
 
@@ -750,7 +764,6 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
-        //5 secs
         private void SideBlastsAttackHard()
         {
             Player player = Main.player[npc.target];
@@ -798,9 +811,282 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        private void IceSpiralAttackHard()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+            }
+            else
+            {
+                npc.velocity = Vector2.Zero;
+
+                if (npc.ai[1] == 60 || npc.ai[1] == 240 && Main.netMode != 1)
+                {
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<IceShield>(), 80, 0f, Main.myPlayer);
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<RotatingIceShards>(), 80, 0f, Main.myPlayer, ai0: i, ai1: 0f);
+                    }
+                }
+
+                if (npc.ai[1] > 120 && npc.ai[1] < 600 && npc.ai[1] % 10 == 0)
+                {
+                    Projectile.NewProjectile(npc.Center, (player.Center - npc.Center).SafeNormalize(Vector2.Zero) * 0.5f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer, ai0: 1.04f);
+                }
+
+                if (npc.ai[1] == 60 || npc.ai[1] == 240)
+                {
+                    Main.PlaySound(29, npc.Center, 88);
+                }
+                if (npc.ai[1] == 120 || npc.ai[1] == 300)
+                {
+                    Main.PlaySound(SoundID.Item120, npc.Center);
+                }
+
+                if (npc.ai[1] % 10 == 0 && npc.ai[1] < 600 && Main.netMode != 1)
+                {
+                    for (int i = 0; i < 24; i++)
+                    {
+                        Vector2 targetPoint = npc.Center + new Vector2(1200, 0).RotatedBy(i * MathHelper.TwoPi / 24);
+                        Vector2 launchPoint = targetPoint + new Vector2(2400, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 24f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer, ai0: 1);
+                        launchPoint = targetPoint - new Vector2(2400, 0).RotatedBy(i * MathHelper.TwoPi / 24 + MathHelper.PiOver2);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 24f, ProjectileType<IceShard>(), 80, 0f, Main.myPlayer, ai0: 1);
+                    }
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 720)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void ShieldBonkHard()
+        {
+            int dashTime = 24;
+            int downTime = 36;
+            int numDashes = 4;
+
+            Player player = Main.player[npc.target];
+
+            holdingShield = true;
+
+            if (npc.ai[1] < 60 || (npc.ai[1] - 60) % (dashTime + downTime) >= dashTime)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 180;
+
+                FlyToPoint(goalPosition, player.velocity, 4f, 2f);
+            }
+            else if ((npc.ai[1] - 60) % (dashTime + downTime) == 0)
+            {
+                canShieldBonk = true;
+
+                npc.width = 40;
+                npc.position.X -= 11;
+
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                npc.velocity.X += npc.direction * 15;
+                npc.velocity.Y = player.velocity.Y / 2;
+            }
+            else if ((npc.ai[1] - 60) % (dashTime + downTime) == dashTime)
+            {
+                if (canShieldBonk)
+                {
+                    npc.width = 18;
+                    npc.position.X += 11;
+                }
+
+                canShieldBonk = false;
+
+                npc.velocity.X -= npc.direction * 15;
+            }
+
+            //custom stuff for player EoC shield bonks
+            //adapted from how the player detects SoC collision
+            if (canShieldBonk)
+            {
+                for (int i = 0; i < Main.maxPlayers; i++)
+                {
+                    if (Main.player[i].active && !Main.player[i].dead && Main.player[i].dash == 2 && Main.player[i].eocDash > 0 && Main.player[i].eocHit < 0)
+                    {
+                        Rectangle shieldHitbox = new Rectangle((int)((double)Main.player[i].position.X + (double)Main.player[i].velocity.X * 0.5 - 4.0), (int)((double)Main.player[i].position.Y + (double)Main.player[i].velocity.Y * 0.5 - 4.0), Main.player[i].width + 8, Main.player[i].height + 8);
+                        if (shieldHitbox.Intersects(npc.getRect()))
+                        {
+                            //custom stuff for player EoC shield bonks
+                            //adapted from how the player detects SoC collision
+                            npc.width = 18;
+                            npc.position.X += 11;
+
+                            npc.direction *= -1;
+                            npc.velocity.X += npc.direction * 30;
+                            canShieldBonk = false;
+
+                            Main.PlaySound(SoundID.NPCHit4, npc.Center);
+
+                            //redo the player's SoC bounce motion
+                            int num40 = Main.player[i].direction;
+                            if (Main.player[i].velocity.X < 0f)
+                            {
+                                num40 = -1;
+                            }
+                            if (Main.player[i].velocity.X > 0f)
+                            {
+                                num40 = 1;
+                            }
+                            Main.player[i].eocDash = 10;
+                            Main.player[i].dashDelay = 30;
+                            Main.player[i].velocity.X = -num40 * 9;
+                            Main.player[i].velocity.Y = -4f;
+                            Main.player[i].immune = true;
+                            Main.player[i].immuneNoBlink = true;
+                            Main.player[i].immuneTime = 4;
+                            Main.player[i].eocHit = i;
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 60 + numDashes * (dashTime + downTime))
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void SlimeBonkHard()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(0, -1) * 360;
+
+                FlyToPoint(goalPosition, player.velocity, 4f, 2f);
+            }
+            else
+            {
+                bool justBounced = false;
+
+                if (npc.ai[1] == 60)
+                {
+                    justBounced = true;
+
+                    Main.PlaySound(SoundID.Item81, npc.Center);
+
+                    onSlimeMount = true;
+
+                    if (npc.velocity.Y < 0) npc.velocity.Y /= 2;
+                    npc.velocity.X = player.velocity.X;
+
+                    npc.width = 40;
+                    npc.position.X -= 11;
+                    npc.height = 64;
+                    drawOffsetY = -15;
+                }
+                else if (onSlimeMount)
+                {
+                    if (npc.ai[1] == 599)
+                    {
+                        npc.velocity = player.velocity;
+                        onSlimeMount = false;
+
+                        npc.width = 18;
+                        npc.position.X += 11;
+                        npc.height = 40;
+                        drawOffsetY = -5;
+
+
+                        for (int i = 0; i < Main.maxProjectiles; i++)
+                        {
+                            if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
+                            {
+                                Main.projectile[i].ai[1] = 1;
+
+                                break;
+                            }
+                        }
+                    }
+                    else if (npc.velocity.Y < 0 || npc.Hitbox.Top - 240 < player.Hitbox.Bottom)
+                    {
+                        npc.velocity.Y += 0.9f;
+
+                        npc.direction = npc.velocity.X > 0 ? -1 : 1;
+                        npc.spriteDirection = -npc.direction;
+                    }
+                    else
+                    {
+                        npc.velocity.Y = -36f;
+                        npc.velocity.X = player.velocity.X + (player.Center.X - npc.Center.X) / 60f;
+
+                        npc.direction = npc.velocity.X > 0 ? -1 : 1;
+                        npc.spriteDirection = -npc.direction;
+
+                        justBounced = true;
+                    }
+                }
+                else
+                {
+                    npc.velocity *= 0.98f;
+                }
+
+                //summon bigger fish
+                if (justBounced)
+                {
+                    for (int i=0; i<Main.maxProjectiles; i++)
+                    {
+                        if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
+                        {
+                            Main.projectile[i].Kill();
+                            break;
+                        }
+                    }
+
+                    if (npc.ai[1] <= 540 && Main.netMode != 1)
+                    {
+                        float eta = 5f;
+                        float determinant = (npc.velocity.Y - player.velocity.Y) * (npc.velocity.Y - player.velocity.Y) - 4 * 0.45f * (npc.Center.Y - player.Center.Y + 240);
+                        if (determinant >= 0)
+                            eta = Math.Max(3, (-(npc.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                        float speed = 28f;
+                        Vector2 targetPoint = new Vector2(npc.Center.X + npc.velocity.X * eta, player.Center.Y + 240 + player.velocity.Y * eta);
+                        Vector2 shotPosition = targetPoint + new Vector2(npc.direction * eta * speed, 0);
+                        Vector2 shotVelocity = (targetPoint - shotPosition) / eta;
+
+                        Projectile.NewProjectile(shotPosition, shotVelocity, ProjectileType<FishronPlatform>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI);
+                    }
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 600)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
-            return canShieldBonk || onSlimeMount;
+            return canShieldBonk || (onSlimeMount && npc.velocity.Y > target.velocity.Y);
         }
 
         public override void OnHitPlayer(Player target, int damage, bool crit)
@@ -817,6 +1103,30 @@ namespace DeathsTerminus.NPCs.CataBoss
             else if (onSlimeMount)
             {
                 npc.velocity.Y = -24f;
+
+                for (int i = 0; i < Main.maxProjectiles; i++)
+                {
+                    if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
+                    {
+                        Main.projectile[i].ai[1] = 1;
+
+                        if (Main.netMode != 1)
+                        {
+                            float eta = 5f;
+                            float determinant = (npc.velocity.Y - target.velocity.Y) * (npc.velocity.Y - target.velocity.Y) - 4 * 0.45f * (npc.Center.Y - target.Center.Y + 240);
+                            if (determinant >= 0)
+                                eta = Math.Max(3, (-(npc.velocity.Y - target.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                            float speed = 28f;
+                            Vector2 targetPoint = new Vector2(npc.Center.X + npc.velocity.X * eta, target.Center.Y + 240 + target.velocity.Y * eta);
+                            Vector2 shotPosition = targetPoint + new Vector2(npc.direction * eta * speed, 0);
+                            Vector2 shotVelocity = (targetPoint - shotPosition) / eta;
+
+                            Projectile.NewProjectile(shotPosition, shotVelocity, ProjectileType<FishronPlatform>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI);
+                        }
+
+                        break;
+                    }
+                }
             }
         }
 
@@ -1113,8 +1423,8 @@ namespace DeathsTerminus.NPCs.CataBoss
                 float angle = MathHelper.TwoPi * projectile.timeLeft / 360f;
 
                 //set radius and rotation (replace with more dynamic AI later)
-                projectile.ai[1] = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
-                projectile.rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
+                projectile.localAI[1] = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
+                projectile.rotation = projectile.ai[1] + projectile.ai[0] * (angle + MathHelper.Pi) / 2;
             }
         }
 
@@ -1122,7 +1432,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             for (int i = 0; i < shardCount; i++)
             {
-                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount);
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.localAI[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount);
                 float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
                 float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
                 if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < shardRadius)
@@ -1150,14 +1460,14 @@ namespace DeathsTerminus.NPCs.CataBoss
                 {
                     float angle = MathHelper.TwoPi * j / 360f;
                     float radius = 600 * (float)Math.Sqrt(2 - 2 * Math.Cos(angle));
-                    float rotation = projectile.ai[0] * (angle + MathHelper.Pi) / 2;
+                    float rotation = projectile.ai[1] + projectile.ai[0] * (angle + MathHelper.Pi) / 2;
                     float alphaMultiplier = Math.Max(0, (60 - projectile.timeLeft + j) / 60f);
 
                     spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(radius * projectile.scale, 0).RotatedBy(rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White * alphaMultiplier * 0.03f, rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + j / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
                 }
 
                 if (projectile.timeLeft <= 360)
-                    spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.ai[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + projectile.timeLeft / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
+                    spriteBatch.Draw(texture, projectile.Center - Main.screenPosition + new Vector2(projectile.localAI[1] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / shardCount), frame, Color.White, projectile.rotation + i * MathHelper.TwoPi / shardCount - MathHelper.PiOver2 + projectile.ai[0] * MathHelper.Pi * (1 + projectile.timeLeft / 360f), new Vector2(12, 37), projectile.scale, SpriteEffects.None, 0f);
             }
             return false;
         }
@@ -1196,7 +1506,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             projectile.velocity *= projectile.ai[0];
 
-            projectile.rotation = projectile.velocity.ToRotation() + MathHelper.PiOver2;
+            projectile.rotation = projectile.velocity.ToRotation() - MathHelper.PiOver2;
         }
 
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
@@ -1758,6 +2068,162 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                 }
             }
+
+            return false;
+        }
+    }
+
+    public class FishronPlatform : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_370";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Sitting Duke");
+            Main.projFrames[projectile.type] = 8;
+
+            ProjectileID.Sets.TrailCacheLength[projectile.type] = 5;
+            ProjectileID.Sets.TrailingMode[projectile.type] = 2;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 100;
+            projectile.height = 100;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 400;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            if (projectile.ai[1] == 0)
+            {
+                NPC boss = Main.npc[(int)projectile.ai[0]];
+                Player player = Main.player[boss.target];
+
+                float eta = 5f;
+                float determinant = (boss.velocity.Y - player.velocity.Y) * (boss.velocity.Y - player.velocity.Y) - 4 * 0.45f * (boss.Center.Y - player.Center.Y + 240);
+                if (determinant >= 0)
+                    eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                Vector2 targetPoint = new Vector2(boss.Center.X + boss.velocity.X * eta, player.Center.Y + 240 + player.velocity.Y * eta + projectile.height);
+                Vector2 targetVelocity = (targetPoint - projectile.Center) / eta;
+                projectile.velocity += (targetVelocity - projectile.velocity) / 10f;
+            }
+            else
+            {
+                projectile.velocity.Y += 0.15f;
+            }
+            
+            projectile.rotation = projectile.velocity.ToRotation();
+            projectile.direction = projectile.velocity.X > 0 ? 1 : -1;
+            projectile.spriteDirection = projectile.direction;
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 3)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 8)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override void Kill(int timeLeft)
+        {
+            if (timeLeft > 0)
+            {
+                Main.PlaySound(SoundID.NPCHit14, projectile.Center);
+
+                for (int i=0; i<8; i++)
+                {
+                    Projectile.NewProjectile(projectile.Center, new Vector2(4, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
+                    Projectile.NewProjectile(projectile.Center, new Vector2(2, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
+                }
+            }
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 8, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            for (int i = projectile.oldPos.Length - 1; i >= 0; i--)
+            {
+                float alpha = (projectile.oldPos.Length - i) / (float)projectile.oldPos.Length;
+                spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i], frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+
+            return false;
+        }
+    }
+
+    public class FloatingBubble : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_371";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Death Bubble");
+            Main.projFrames[projectile.type] = 2;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 48;
+            projectile.height = 48;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 480;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            projectile.velocity *= 0.99f;
+            projectile.velocity.Y -= 0.08f;
+
+            projectile.rotation += projectile.velocity.X * 0.1f;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 2, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * 0.5f, projectile.rotation, new Vector2(24, 24), projectile.scale, effects, 0f);
 
             return false;
         }
