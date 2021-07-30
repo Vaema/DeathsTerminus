@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "swpqq9zGOppLXGupzzIRj3k1Yyt/SnLvZSc1I4Mc3FWNqJ5Md16SYTK7zViWuq2H/wjZj+yo+HVts4JiuM/LKg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\alekz\\Documents\\My Games\\Terraria\\ModLoader\\Mod Sources\\DeathsTerminusMusic\\DeathsTerminusMusic.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\alekz\\.nuget\\packages\\tmodloader.codeassist\\0.1.2\\tmodloader.codeassist.0.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}
