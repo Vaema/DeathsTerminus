@@ -54,7 +54,7 @@ namespace DeathsTerminus.NPCs
 
         public override string TownNPCName()
         {
-            return "Scott";
+            return "";
         }
 
         public override bool CanGoToStatue(bool toKingStatue) => toKingStatue;
@@ -73,8 +73,12 @@ namespace DeathsTerminus.NPCs
 
                 "Struggling with a boss? Here's a couple tips. One, hit the boss. Two, don't get hit yourself. Easy, right?",
                 "You don't like my outfit? Well I don't care about your feelings, so buzz off already!",
-                "So, you'd like to challenge me? Prove yourself first, then we'll talk.",
             };
+
+            if (!NPC.downedMoonlord)
+            {
+                dialogue.Add("So, you'd like to challenge me? Prove yourself first, then we'll talk.");
+            }
 
             int stylist = NPC.FindFirstNPC(NPCID.Stylist);
             if (stylist != -1)
