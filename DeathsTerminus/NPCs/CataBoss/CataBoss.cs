@@ -148,10 +148,18 @@ namespace DeathsTerminus.NPCs.CataBoss
                     Phase1To2Animation();
                     break;
                 case 12:
+                    //7.3333 secs each
+                    SideScythesAttackHard();
+                    break;
+                case 13:
+                    //3 secs each
+                    SideSuperScythesAttack();
+                    break;
+                case 14:
                     //5 secs each
                     SideBlastsAttackHard();
                     break;
-                case 13:
+                case 15:
                     npc.ai[0] = 0;
                     break;
             }
@@ -312,54 +320,6 @@ namespace DeathsTerminus.NPCs.CataBoss
 
                 Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
                 Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer);
-            }
-
-            if (npc.ai[1] >= 90 && npc.ai[1] % shotPeriod == 90 % shotPeriod)
-            {
-                Main.PlaySound(SoundID.Item71, npc.Center);
-            }
-
-            npc.ai[1]++;
-            if (npc.ai[1] == 60 + shotPeriod * numShots)
-            {
-                npc.ai[1] = 0;
-                npc.ai[0]++;
-            }
-        }
-
-        //5 secs
-        private void SideBlastsAttackHard()
-        {
-            Player player = Main.player[npc.target];
-
-            npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-            npc.spriteDirection = npc.direction;
-            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 720;
-
-            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.4f, maxYAcc: 0.4f);
-
-            int shotPeriod = 60;
-            int numShots = 4;
-            float shotSpeed = 0.5f;
-            float shotDistanceFromPlayer = 300;
-
-            if (npc.ai[1] >= 60 && npc.ai[1] % shotPeriod == 60 % shotPeriod && Main.netMode != 1)
-            {
-                float angleRatio = shotDistanceFromPlayer / (player.Center - npc.Center).Length();
-                if (angleRatio > 1)
-                {
-                    angleRatio = 1;
-                }
-
-                int direction = npc.ai[1] % (shotPeriod * 2) == 60 % (shotPeriod * 2) ? 1 : -1;
-                Vector2 shotVelocity = (player.Center - npc.Center).SafeNormalize(Vector2.Zero).RotatedBy(direction * Math.Asin(angleRatio)) * shotSpeed;
-
-                Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
-                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
-                Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
-                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
             }
 
             if (npc.ai[1] >= 90 && npc.ai[1] % shotPeriod == 90 % shotPeriod)
@@ -537,7 +497,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + new Vector2(0, -1) * 360;
 
-                FlyToPoint(goalPosition, player.velocity, 0.8f, 0.8f);
+                FlyToPoint(goalPosition, player.velocity, 1f, 3f);
             }
             else
             {
@@ -556,7 +516,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 }
                 else if (onSlimeMount)
                 {
-                    if (npc.ai[1] < 119 && npc.Hitbox.Top - 300 <= player.Hitbox.Bottom)
+                    if (npc.ai[1] < 119 && (npc.Center - player.Center).Length() < 1000)
                     {
                         npc.velocity.Y += 0.9f;
 
@@ -564,7 +524,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                     else
                     {
-                        npc.velocity.Y = 0;
+                        npc.velocity = player.velocity;
                         onSlimeMount = false;
 
                         npc.width = 18;
@@ -705,12 +665,133 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
             npc.spriteDirection = npc.direction;
-            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 240;
+            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
 
             FlyToPoint(goalPosition, Vector2.Zero);
 
             npc.ai[1]++;
             if (npc.ai[1] == 60)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        //7 secs 20 ticks
+        private void SideScythesAttackHard()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 360;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+            else
+            {
+                npc.spriteDirection = player.Center.X > npc.Center.X ? 1 : -1;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+
+            if (npc.ai[1] >= 60 && npc.ai[1] < 440 && npc.ai[1] % 5 == 0 && Main.netMode != 1)
+            {
+                int numShots = 12;
+                for (int i = 0; i < numShots; i++)
+                {
+                    Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * MathHelper.Pi / 2f * (Math.Cos((npc.ai[1] - 60) / 380f * MathHelper.TwoPi) - 1) / 2f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                }
+            }
+
+            if ((npc.ai[1] >= 60 && npc.ai[1] < 440) && npc.ai[1] % 10 == 0)
+            {
+                Main.PlaySound(SoundID.Item8, npc.Center);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 440)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        //3 secs
+        private void SideSuperScythesAttack()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+            npc.spriteDirection = npc.direction;
+            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 480;
+
+            FlyToPoint(goalPosition, Vector2.Zero);
+
+            if (npc.ai[1] >= 60 && npc.ai[1] % 15 == 0 && Main.netMode != 1)
+            {
+                Projectile.NewProjectile(npc.Center, new Vector2(npc.direction, 0) * 0.5f, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1f);
+            }
+
+            if (npc.ai[1] > 60 && npc.ai[1] % 15 == 14)
+            {
+                Main.PlaySound(SoundID.Item71, npc.Center);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 180)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        //5 secs
+        private void SideBlastsAttackHard()
+        {
+            Player player = Main.player[npc.target];
+
+            npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+            npc.spriteDirection = npc.direction;
+            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 720;
+
+            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.4f, maxYAcc: 0.4f);
+
+            int shotPeriod = 60;
+            int numShots = 4;
+            float shotSpeed = 0.5f;
+            float shotDistanceFromPlayer = 300;
+
+            if (npc.ai[1] >= 60 && npc.ai[1] % shotPeriod == 60 % shotPeriod && Main.netMode != 1)
+            {
+                float angleRatio = shotDistanceFromPlayer / (player.Center - npc.Center).Length();
+                if (angleRatio > 1)
+                {
+                    angleRatio = 1;
+                }
+
+                int direction = npc.ai[1] % (shotPeriod * 2) == 60 % (shotPeriod * 2) ? 1 : -1;
+                Vector2 shotVelocity = (player.Center - npc.Center).SafeNormalize(Vector2.Zero).RotatedBy(direction * Math.Asin(angleRatio)) * shotSpeed;
+
+                Projectile.NewProjectile(npc.Center, shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                Projectile.NewProjectile(npc.Center, -shotVelocity.RotatedBy(-0.15f), ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+            }
+
+            if (npc.ai[1] >= 90 && npc.ai[1] % shotPeriod == 90 % shotPeriod)
+            {
+                Main.PlaySound(SoundID.Item71, npc.Center);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 60 + shotPeriod * numShots)
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
@@ -768,8 +849,6 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override bool PreDraw(SpriteBatch spriteBatch, Color drawColor)
         {
-            //still need to do a trail effect for everything
-
             int trailLength = 1;
             if (canShieldBonk) trailLength = 5;
             if (onSlimeMount) trailLength = 5;
@@ -981,13 +1060,15 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 spriteBatch.Draw(Main.projectileTexture[projectile.type], projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
 
-                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 1), Color.Purple, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(projectile.velocity.Length(), 1), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Purple * 0.25f, projectile.velocity.ToRotation(), new Vector2(0, 8), new Vector2(30, projectile.width / 16f), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Purple * 0.25f, (-projectile.velocity).ToRotation(), new Vector2(0, 8), new Vector2(projectile.width / 128f, projectile.width / 16f), SpriteEffects.None, 0f);
             }
             else if (projectile.ai[1] == 1)
             {
                 spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataEclipseScythe"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, Main.projectileTexture[projectile.type].Width, Main.projectileTexture[projectile.type].Height), Color.White * (1 - projectile.alpha / 255f), projectile.rotation, new Vector2(Main.projectileTexture[projectile.type].Width / 2f, Main.projectileTexture[projectile.type].Height / 2f), projectile.scale, SpriteEffects.None, 0f);
 
-                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 1), Color.Orange, projectile.velocity.ToRotation(), new Vector2(0, 0.5f), new Vector2(projectile.velocity.Length(), 1), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Orange * 0.25f, projectile.velocity.ToRotation(), new Vector2(0, 8), new Vector2(30, projectile.width / 16f), SpriteEffects.None, 0f);
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Orange * 0.25f, (-projectile.velocity).ToRotation(), new Vector2(0, 8), new Vector2(projectile.width / 128f, projectile.width / 16f), SpriteEffects.None, 0f);
             }
 
             return false;
@@ -1388,7 +1469,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             Texture2D texture = Main.projectileTexture[projectile.type];
 
-            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, texture.Frame(), Color.White, projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, texture.Frame(), Color.White, projectile.rotation, texture.Frame().Size()/2, new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
 
             return false;
         }
