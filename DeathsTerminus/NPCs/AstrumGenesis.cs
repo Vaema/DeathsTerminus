@@ -6,6 +6,7 @@ using Terraria.Localization;
 using Terraria.ModLoader;
 using static Terraria.ModLoader.ModContent;
 using DeathsTerminus.Enums;
+using DeathsTerminus.NPCs;
 
 namespace DeathsTerminus.NPCs
 {
@@ -70,9 +71,61 @@ namespace DeathsTerminus.NPCs
         {
             List<string> dialogue = new List<string>
             {
-                "test",
+                "Hey there, if you need anything, let me know, I am the Professional Dumbass.",
+                "You circle bosses? I tried that once and was told I circled TOO hard... How do you circle TOO hard!?",
+                "Sure, homing is nice, but have you considered aiming?",
+                "Not to be racist or anything, but what the hell is oatmeal?",
+                "WHAT DO YOU MEAN IM MISSING A SEMICOLON?! I'VE SCOURED THE ENTIRE oh wait, that's where I'm missing it.",
+
             };
 
+            if (!NPC.downedMechBoss2)
+            {
+                Mod modFargosSouls = ModLoader.GetMod("FargowiltasSouls");
+                if (modFargosSouls != null)
+                {
+                    dialogue.Add("If you see that metallic worm monstrosity.....Make sure you obliterate it for me!");
+                }
+            }
+
+            int nurse = NPC.FindFirstNPC(NPCID.Nurse);
+            if (nurse != -1)
+            {
+                
+                dialogue.Add($"Hey, I'm gonna chill with {Main.npc[nurse].GivenName}, there might be something between us.");
+            }
+
+            int cata = NPC.FindFirstNPC(ModContent.NPCType<CataclysmicArmageddon>());
+            if (cata != -1)
+            {
+                dialogue.Add("That Cata guy is freaking me out, he keeps making me fight stuff while grinning then laughs at me for losing.");
+            }
+
+            /*int terry = NPC.FindFirstNPC(ModContent.NPCType<Terry>());
+            if (terry != -1)
+            {
+                dialogue.Add("Terry ask me the time earlier, When I told him it was 22:22 the dude started laughing then exploded");
+            }*/
+
+            /*int turing = NPC.FindFirstNPC(ModContent.NPCType<Turing>());
+            if (turing != -1)
+            {
+                dialogue.Add("Don't talk to Turing unless you carry a thesaurus, trust me, I tried.");
+            }*/
+
+            if (Main.eclipse)
+            {
+                dialogue.Add("Where did the sun go? I could've sworn I put it right there.");
+            }
+
+            if (NPC.downedMoonlord)
+            {
+                dialogue.Add("I'm much stronger than I was last time, so don't expect me to go down as easily!");
+            }
+            else if (NPC.downedPlantBoss)
+            {
+                dialogue.Add("So I heard you wanted to fight. Talk to me when you're ready.");
+            }
 
             return Main.rand.Next(dialogue);
         }
@@ -82,7 +135,7 @@ namespace DeathsTerminus.NPCs
             if (!Main.LocalPlayer.HasItem(ItemID.RodofDiscord))
             {
                 button = Language.GetTextValue("LegacyInterface.28");
-                if (NPC.downedMoonlord)
+                if (NPC.downedPlantBoss)
                 {
                     button2 = "Challenge";
                 }
@@ -107,12 +160,12 @@ namespace DeathsTerminus.NPCs
 
                 if (Main.netMode == NetmodeID.SinglePlayer)
                 {
-                    Main.NewText(message, 0, 76, 153);
+                    Main.NewText(message, 255, 77, 23);
                     Main.NewText(message2, 175, 75, 255);
                 }
                 else if (Main.netMode == NetmodeID.Server)
                 {
-                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message), new Color(0, 76, 153));
+                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message), new Color(255, 77, 23));
                     NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message2), new Color(175, 75, 255));
                 }
 
