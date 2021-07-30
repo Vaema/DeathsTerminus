@@ -6,7 +6,6 @@ using Terraria.Localization;
 using Terraria.ModLoader;
 using static Terraria.ModLoader.ModContent;
 using DeathsTerminus.Enums;
-using DeathsTerminus.NPCs.CataBoss;
 
 namespace DeathsTerminus.NPCs
 {
@@ -23,7 +22,6 @@ namespace DeathsTerminus.NPCs
             NPCID.Sets.AttackType[npc.type] = 0;
             NPCID.Sets.AttackTime[npc.type] = 90;
             NPCID.Sets.AttackAverageChance[npc.type] = 30;
-            NPCID.Sets.HatOffsetY[npc.type] = 4;
         }
 
         public override void SetDefaults()
@@ -52,6 +50,12 @@ namespace DeathsTerminus.NPCs
 
         }
 
+        public override string TownNPCName()
+        {
+            
+            return "";
+        }
+
 
         public override bool CanGoToStatue(bool toKingStatue) => toKingStatue;
 
@@ -66,7 +70,7 @@ namespace DeathsTerminus.NPCs
         {
             List<string> dialogue = new List<string>
             {
-                "",
+                "test",
             };
 
 
@@ -78,6 +82,10 @@ namespace DeathsTerminus.NPCs
             if (!Main.LocalPlayer.HasItem(ItemID.RodofDiscord))
             {
                 button = Language.GetTextValue("LegacyInterface.28");
+                if (NPC.downedMoonlord)
+                {
+                    button2 = "Challenge";
+                }
             }
 
         }
@@ -89,7 +97,28 @@ namespace DeathsTerminus.NPCs
             {
                 shop = true;
             }
-            
+            else
+            {
+                //Spawn Boss Here
+                //npc.Transform(mod.NPCType("AstrumBoss"));
+
+                string message = "Don't hold back now, or I'll hold it against you for the rest of your life... which won't be very long anyways.";
+                string message2 = "Astrum Genesis has awoken!";
+
+                if (Main.netMode == NetmodeID.SinglePlayer)
+                {
+                    Main.NewText(message, 0, 76, 153);
+                    Main.NewText(message2, 175, 75, 255);
+                }
+                else if (Main.netMode == NetmodeID.Server)
+                {
+                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message), new Color(0, 76, 153));
+                    NetMessage.BroadcastChatMessage(NetworkText.FromLiteral(message2), new Color(175, 75, 255));
+                }
+
+                Main.PlaySound(new Terraria.Audio.LegacySoundStyle(SoundID.Zombie, 105));
+            }
+
 
         }
 
@@ -98,6 +127,11 @@ namespace DeathsTerminus.NPCs
             
         }
 
-        
+        public override bool StrikeNPC(ref double damage, int defense, ref float knockback, int hitDirection, ref bool crit)
+        {
+            npc.life = 0;
+            npc.checkDead();
+            return true;
+        }
     }
 }
