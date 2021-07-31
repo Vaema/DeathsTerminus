@@ -29,7 +29,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             Main.npcFrameCount[npc.type] = 5;
 
             NPCID.Sets.TrailCacheLength[npc.type] = 5;
-            NPCID.Sets.TrailingMode[npc.type] = 2;
+            NPCID.Sets.TrailingMode[npc.type] = 3;
         }
 
         public override void SetDefaults()
@@ -81,8 +81,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                 if (!player.active || player.dead)
                 {
                     npc.Transform(NPCType<CataclysmicArmageddon>());
-                    //NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
-                    //npc.active = false;
 
                     for (int i=0; i<Main.maxProjectiles; i++)
                     {
@@ -153,11 +151,11 @@ namespace DeathsTerminus.NPCs.CataBoss
                     SideScythesAttackHard();
                     break;
                 case 13:
-                case 16:
-                    //3 secs each
-                    SideSuperScythesAttack();
+                    //
+                    npc.ai[0] = 14;
                     break;
                 case 14:
+                case 21:
                     //5 secs each
                     SideBlastsAttackHard();
                     break;
@@ -165,8 +163,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                     //12 secs each
                     IceSpiralAttackHard();
                     break;
+                case 16:
+                    //2.5 secs each
+                    SideSuperScythesAttack();
+                    break;
                 case 17:
-                    //5 secs each
+                    //6 secs each
                     ShieldBonkHard();
                     break;
                 case 18:
@@ -174,6 +176,14 @@ namespace DeathsTerminus.NPCs.CataBoss
                     SlimeBonkHard();
                     break;
                 case 20:
+                    //10 secs each
+                    MothronsAndLampAttack();
+                    break;
+                case 22:
+                    //10 secs each
+                    HeavenPetAttackHard();
+                    break;
+                case 23:
                     npc.ai[0] = 0;
                     break;
             }
@@ -188,23 +198,96 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (relativeVelocity.X * relativeVelocity.X / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ relativeVelocity.X < 0))
             {
                 //overshoot
-                npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? -1 : 1);
+
+                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
+                if ((relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) < 0))
+                {
+                    //overshoot
+                    npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? -1 : 1);
+                }
+                else
+                {
+                    //undershoot
+                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
+                    //float a = 1;
+                    float b = (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X));
+                    float c = relativeVelocity.X * relativeVelocity.X;
+                    float determinant = b * b - 4 * c;
+                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
+
+                    npc.velocity.X += modifier * (goalOffset.X > 0 ? -1 : 1);
+                }
             }
             else
             {
                 //undershoot
-                npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? 1 : -1);
+
+                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
+                if ((relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) < 0))
+                {
+                    //undershoot
+                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
+                    //float a = 1;
+                    float b = (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X));
+                    float c = relativeVelocity.X * relativeVelocity.X;
+                    float determinant = b * b - 4 * c;
+                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
+
+                    npc.velocity.X += modifier * (goalOffset.X > 0 ? -1 : 1);
+                }
+                else
+                {
+                    //undershoot
+                    npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? 1 : -1);
+                }
             }
-            //compute whether we'll overshoot or undershoot our X goal at our current velocity
+
+            //compute whether we'll overshoot or undershoot our Y goal at our current velocity
             if (relativeVelocity.Y * relativeVelocity.Y / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ relativeVelocity.Y < 0))
             {
                 //overshoot
-                npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? -1 : 1);
+
+                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
+                if ((relativeVelocity.Y + maxYAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) < 0))
+                {
+                    //overshoot
+                    npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? -1 : 1);
+                }
+                else
+                {
+                    //undershoot
+                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
+                    //float a = 1;
+                    float b = (2 * relativeVelocity.Y * (goalOffset.Y > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.Y));
+                    float c = relativeVelocity.Y * relativeVelocity.Y;
+                    float determinant = b * b - 4 * c;
+                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
+
+                    npc.velocity.Y += modifier * (goalOffset.Y > 0 ? -1 : 1);
+                }
             }
             else
             {
                 //undershoot
-                npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? 1 : -1);
+
+                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
+                if ((relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) * (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) < 0))
+                {
+                    //undershoot
+                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
+                    //float a = 1;
+                    float b = (2 * relativeVelocity.Y * (goalOffset.Y > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.Y));
+                    float c = relativeVelocity.Y * relativeVelocity.Y;
+                    float determinant = b * b - 4 * c;
+                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
+
+                    npc.velocity.Y += modifier * (goalOffset.Y > 0 ? -1 : 1);
+                }
+                else
+                {
+                    //undershoot
+                    npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? 1 : -1);
+                }
             }
         }
 
@@ -600,7 +683,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 }
                 */
 
-                if (Main.netMode != 1 && npc.ai[1] >= 90 && npc.ai[1] <= 480 && npc.ai[1] % 5 == 0)
+                if (Main.netMode != 1 && npc.ai[1] >= 90 && npc.ai[1] <= 480 && npc.ai[1] % 4 == 0)
                 {
                     Vector2 arenaCenter = new Vector2(npc.ai[2], npc.ai[3]);
 
@@ -620,7 +703,7 @@ namespace DeathsTerminus.NPCs.CataBoss
 
                     float availableHeight = (float)Math.Sqrt(1200f * 1200f - relativeRayPosition * relativeRayPosition);
 
-                    float shotAngle = -npc.direction * availableAngle * ((npc.ai[1] / 1.618f / 5 % 1) * 2 - 1);
+                    float shotAngle = -npc.direction * availableAngle * ((npc.ai[1] / 1.618f / 4 % 1) * 2 - 1);
                     float goalHeight = arenaCenter.Y + -npc.direction * shotAngle / availableAngle * availableHeight;
 
                     Projectile.NewProjectile(arenaCenter + new Vector2(-1800f * npc.direction, 0f).RotatedBy(shotAngle), new Vector2(32f * npc.direction, 0).RotatedBy(shotAngle), ProjectileType<BabyMothronProjectile>(), 80, 0f, Main.myPlayer, ai0: goalHeight, ai1: npc.direction * 1500 - npc.direction * 5 * (npc.ai[1] - 60) + arenaCenter.X);
@@ -645,7 +728,7 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             if (npc.ai[1] == 0 && Main.netMode != 1)
             {
-                Projectile.NewProjectile(npc.Center, new Vector2(0, -6), ProjectileType<HeavenPetProjectile>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI);
+                Projectile.NewProjectile(npc.Center, (player.Center - npc.Center).SafeNormalize(Vector2.Zero) * -6f, ProjectileType<HeavenPetProjectile>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI);
             }
 
             if (npc.ai[1] < 600)
@@ -742,22 +825,26 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (npc.ai[1] < 60)
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
             npc.spriteDirection = npc.direction;
-            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 450;
+            Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 360;
 
             FlyToPoint(goalPosition, Vector2.Zero);
 
-            if (npc.ai[1] >= 60 && npc.ai[1] % 15 == 0 && Main.netMode != 1)
+            if (npc.ai[1] >= 60 && npc.ai[1] <= 90 && npc.ai[1] % 10 == 0 && Main.netMode != 1)
             {
-                Projectile.NewProjectile(npc.Center, new Vector2(npc.direction, 0) * 0.5f, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1f);
-            }
+                int number = (int)(npc.ai[1] - 60) / 10;
 
-            if (npc.ai[1] > 60 && npc.ai[1] % 15 == 14)
+                for (int i = -number; i <= number; i++)
+                {
+                    Projectile.NewProjectile(npc.Center, new Vector2(npc.direction, 0).RotatedBy(i / 3f * MathHelper.TwoPi / 6) * 0.5f, ProjectileType<CataBossSuperScythe>(), 80, 0f, Main.myPlayer, ai1: 1f);
+                }
+            }
+            if (npc.ai[1] - 30 >= 60 && npc.ai[1] - 30 <= 90 && (npc.ai[1] - 30) % 10 == 0)
             {
                 Main.PlaySound(SoundID.Item71, npc.Center);
             }
 
             npc.ai[1]++;
-            if (npc.ai[1] == 180)
+            if (npc.ai[1] == 150)
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
@@ -874,14 +961,14 @@ namespace DeathsTerminus.NPCs.CataBoss
         private void ShieldBonkHard()
         {
             int dashTime = 24;
-            int downTime = 36;
+            int downTime = 51;
             int numDashes = 4;
 
             Player player = Main.player[npc.target];
 
             holdingShield = true;
 
-            if (npc.ai[1] < 60 || (npc.ai[1] - 60) % (dashTime + downTime) >= dashTime)
+            if (npc.ai[1] < 60 || (npc.ai[1] - 60) % (dashTime + downTime) > dashTime)
             {
                 npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                 npc.spriteDirection = npc.direction;
@@ -912,6 +999,14 @@ namespace DeathsTerminus.NPCs.CataBoss
                 canShieldBonk = false;
 
                 npc.velocity.X -= npc.direction * 15;
+            }
+            else
+            {
+                //spawn moths
+                if (npc.ai[1] % 4 == 0 && Main.netMode != 1)
+                {
+                    Projectile.NewProjectile(player.Center + new Vector2(-npc.spriteDirection * 2048, player.velocity.Y * 64f), new Vector2(npc.spriteDirection * 32, 0), ProjectileType<MothProjectile>(), 80, 0f, Main.myPlayer);
+                }
             }
 
             //custom stuff for player EoC shield bonks
@@ -1014,7 +1109,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                         npc.height = 40;
                         drawOffsetY = -5;
 
-
                         for (int i = 0; i < Main.maxProjectiles; i++)
                         {
                             if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
@@ -1034,6 +1128,15 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                     else
                     {
+                        for (int i = 0; i < Main.maxProjectiles; i++)
+                        {
+                            if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
+                            {
+                                Main.projectile[i].Kill();
+                                break;
+                            }
+                        }
+
                         npc.velocity.Y = -36f;
                         npc.velocity.X = player.velocity.X + (player.Center.X - npc.Center.X) / 60f;
 
@@ -1051,21 +1154,10 @@ namespace DeathsTerminus.NPCs.CataBoss
                 //summon bigger fish
                 if (justBounced)
                 {
-                    for (int i=0; i<Main.maxProjectiles; i++)
-                    {
-                        if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
-                        {
-                            Main.projectile[i].Kill();
-                            break;
-                        }
-                    }
-
                     if (npc.ai[1] <= 540 && Main.netMode != 1)
                     {
-                        float eta = 5f;
-                        float determinant = (npc.velocity.Y - player.velocity.Y) * (npc.velocity.Y - player.velocity.Y) - 4 * 0.45f * (npc.Center.Y - player.Center.Y + 240);
-                        if (determinant >= 0)
-                            eta = Math.Max(3, (-(npc.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                        float determinant = Math.Max(0, (npc.velocity.Y - player.velocity.Y) * (npc.velocity.Y - player.velocity.Y) - 4 * 0.45f * (npc.Center.Y - player.Center.Y + 240));
+                        float eta = Math.Max(3, (-(npc.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
                         float speed = 28f;
                         Vector2 targetPoint = new Vector2(npc.Center.X + npc.velocity.X * eta, player.Center.Y + 240 + player.velocity.Y * eta);
                         Vector2 shotPosition = targetPoint + new Vector2(npc.direction * eta * speed, 0);
@@ -1083,6 +1175,113 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.ai[0]++;
             }
         }
+
+        private void MothronsAndLampAttack()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 1080;
+
+                FlyToPoint(goalPosition, player.velocity, 0.8f, 0.8f);
+            }
+            else
+            {
+                if (npc.ai[1] == 60)
+                {
+                    npc.ai[2] = npc.Center.X;
+                    npc.ai[3] = npc.Center.Y;
+
+                    //need to make ray of sunshine cause screenshake
+                    Main.PlaySound(SoundID.Zombie, npc.Center + new Vector2(npc.direction, 0) * 1500, 104);
+                    Main.LocalPlayer.GetModPlayer<DTPlayer>().screenShakeTime = 60;
+
+                    if (Main.netMode != 1)
+                    {
+                        Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<SigilArena>(), 80, 0f, Main.myPlayer);
+                        Projectile.NewProjectile(npc.Center + new Vector2(npc.direction, 0) * 1500, new Vector2(-npc.direction * 5, 0), ProjectileType<SunLamp>(), 80, 0f, Main.myPlayer, ai0: 1f);
+                    }
+                }
+
+                if (npc.ai[1] == 120)
+                {
+                    Main.PlaySound(SoundID.Zombie, (int)npc.Center.X, (int)npc.Center.Y, 73, volumeScale: 2f, pitchOffset: -1);
+                }
+
+                int period = 60;
+                float number = 10;
+
+                if (Main.netMode != 1 && npc.ai[1] >= 90 && npc.ai[1] <= 480 && npc.ai[1] % period == 0)
+                {
+                    Vector2 arenaCenter = new Vector2(npc.ai[2], npc.ai[3]);
+
+                    //ray X position
+                    float relativeRayPosition = npc.direction * 1500 - npc.direction * 5 * (npc.ai[1] + 30 - 60);
+
+                    //angle of the arena still available
+                    float availableAngle = (float)Math.Acos(relativeRayPosition / 1200f);
+                    if (npc.direction == 1)
+                    {
+                        availableAngle = MathHelper.Pi - availableAngle;
+                    }
+                    if (availableAngle > MathHelper.Pi / 2)
+                    {
+                        availableAngle = MathHelper.Pi / 2;
+                    }
+
+                    float availableHeight = (float)Math.Sqrt(1200f * 1200f - relativeRayPosition * relativeRayPosition);
+
+                    for (int i = 0; i < number; i++)
+                    {
+                        float angleModifier = ((2 * i - (number - 1)) / number + ((npc.ai[1] / 1.618f / period % 1) * 2 - 1) / number);
+                        angleModifier = (angleModifier * angleModifier * angleModifier + angleModifier) / 2;
+
+                        float shotAngle = -npc.direction * availableAngle * angleModifier;
+                        float goalHeight = arenaCenter.Y + -npc.direction * shotAngle / availableAngle * availableHeight;
+
+                        Projectile.NewProjectile(arenaCenter + new Vector2(-1800f * npc.direction, 0f).RotatedBy(shotAngle), new Vector2(32f * npc.direction, 0).RotatedBy(shotAngle), ProjectileType<MothronProjectile>(), 80, 0f, Main.myPlayer, ai0: goalHeight, ai1: npc.direction * 1500 - npc.direction * 5 * (npc.ai[1] - 60) + arenaCenter.X);
+                    }
+                }
+
+                Vector2 goalPosition = new Vector2(npc.ai[2], npc.ai[3]) + new Vector2(-npc.direction, 0) * 1080;
+
+                FlyToPoint(goalPosition, Vector2.Zero, 0.25f, 0.25f);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 600)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void HeavenPetAttackHard()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] == 60 && Main.netMode != 1)
+            {
+                Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<HeavenPetProjectile>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI, ai1: 0f);
+                Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataLastPrism>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI, ai1: 0f);
+            }
+            npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+            npc.spriteDirection = npc.direction;
+            Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
+
+            FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 600)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
 
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
@@ -1102,8 +1301,6 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
             else if (onSlimeMount)
             {
-                npc.velocity.Y = -24f;
-
                 for (int i = 0; i < Main.maxProjectiles; i++)
                 {
                     if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
@@ -1112,10 +1309,8 @@ namespace DeathsTerminus.NPCs.CataBoss
 
                         if (Main.netMode != 1)
                         {
-                            float eta = 5f;
-                            float determinant = (npc.velocity.Y - target.velocity.Y) * (npc.velocity.Y - target.velocity.Y) - 4 * 0.45f * (npc.Center.Y - target.Center.Y + 240);
-                            if (determinant >= 0)
-                                eta = Math.Max(3, (-(npc.velocity.Y - target.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                            float determinant = Math.Max(0, (npc.velocity.Y - target.velocity.Y) * (npc.velocity.Y - target.velocity.Y) - 4 * 0.45f * (npc.Center.Y - target.Center.Y + 240));
+                            float eta = Math.Max(3, (-(npc.velocity.Y - target.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
                             float speed = 28f;
                             Vector2 targetPoint = new Vector2(npc.Center.X + npc.velocity.X * eta, target.Center.Y + 240 + target.velocity.Y * eta);
                             Vector2 shotPosition = targetPoint + new Vector2(npc.direction * eta * speed, 0);
@@ -1127,6 +1322,8 @@ namespace DeathsTerminus.NPCs.CataBoss
                         break;
                     }
                 }
+
+                npc.velocity.Y = -24f;
             }
         }
 
@@ -1160,12 +1357,14 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override bool PreDraw(SpriteBatch spriteBatch, Color drawColor)
         {
             int trailLength = 1;
-            if (canShieldBonk) trailLength = 5;
-            if (onSlimeMount) trailLength = 5;
+            if (canShieldBonk || onSlimeMount)
+            {
+                trailLength = 5;
+            }
 
             for (int i = trailLength - 1; i >= 0; i--)
             {
-                if (i == 0 || i % 2 == npc.ai[1] % 2)
+                if (i == 0 || i % 2 == (int)npc.ai[1] % 2)
                 {
                     float alpha = (trailLength - i) / (float)trailLength;
                     Vector2 center = npc.oldPos[i] + new Vector2(npc.width, npc.height) / 2;
@@ -1691,26 +1890,43 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             DisplayName.SetDefault("Sun Lamp");
             /*
-            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 1, false, SurfaceFormat.Color);
+            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 2, false, SurfaceFormat.Color);
 			System.Collections.Generic.List<Color> list = new System.Collections.Generic.List<Color>();
-			for (int i = 0; i < texture.Width; i++)
+			for (int j = 0; j < texture.Height; j++)
 			{
-				for (int j = 0; j < texture.Height; j++)
+				for (int i = 0; i < texture.Width; i++)
 				{
-					float x = i / (float)(texture.Width - 1);
+                    if (j == 0)
+                    {
+                        float x = i / (float)(texture.Width - 1);
 
-                    float index = 4 * x * (1 - x);
+                        float index = 4 * x * (1 - x);
 
-                    int r = 255;
-					int g = 255 - (int)(64 * (1 - index));
-					int b = 255 - (int)(255 * (1 - index));
-					int alpha = (int)(255 * index);
+                        int r = 255;
+                        int g = 255 - (int)(64 * (1 - index));
+                        int b = 255 - (int)(255 * (1 - index));
+                        int alpha = (int)(255 * index);
 
-					list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                        list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                    }
+                    else
+                    {
+                        float x = i / (float)(texture.Width - 1);
+
+                        float index = 4 * x * (1 - x);
+
+                        int r = 448 - (int)(512 * index);
+                        int g = 384 - (int)(512 * index);
+                        int b = 256 - (int)(512 * index);
+                        int alpha = (int)(255 * index);
+
+                        list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                    }
 				}
 			}
 			texture.SetData(list.ToArray());
-			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);*/
+			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);
+            */
         }
 
         public override void SetDefaults()
@@ -1778,8 +1994,9 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
             Texture2D texture = Main.projectileTexture[projectile.type];
+            Rectangle frame = texture.Frame(1, 2, 0, (int)projectile.ai[0]);
 
-            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, texture.Frame(), Color.White, projectile.rotation, texture.Frame().Size()/2, new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White, projectile.rotation, frame.Size()/2, new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
 
             return false;
         }
@@ -1895,13 +2112,13 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.scale = 1f;
             projectile.timeLeft = 660;
 
-            projectile.rotation = MathHelper.PiOver2;
-
             projectile.hide = true;
         }
 
         public override void AI()
         {
+            projectile.scale = projectile.ai[1] + 1f;
+
             if (projectile.timeLeft > 60)
             {
                 Player player = Main.player[Main.npc[(int)projectile.ai[0]].target];
@@ -1910,7 +2127,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 {
                     projectile.hostile = true;
 
-                    projectile.velocity -= new Vector2(0.25f, 0).RotatedBy(projectile.rotation);
+                    projectile.velocity -= new Vector2(0.25f, 0).RotatedBy(projectile.rotation) / projectile.scale;
                     projectile.velocity *= 0.95f;
 
                     if (projectile.timeLeft == 600 - 60)
@@ -1930,7 +2147,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                     projectile.velocity *= 0.95f;
                 }
 
-                float maxTurn = 0.015f;
+                float maxTurn = 0.02f / projectile.scale;
 
                 float rotationOffset = (player.Center - projectile.Center).ToRotation() - projectile.rotation;
                 while (rotationOffset > MathHelper.Pi)
@@ -1980,7 +2197,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
         {
             float point = 0f;
-            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center, projectile.Center + new Vector2(4096, 0).RotatedBy(projectile.rotation), 22, ref point);
+            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center, projectile.Center + new Vector2(4096, 0).RotatedBy(projectile.rotation), 22 * projectile.scale, ref point);
         }
 
         public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
@@ -2034,7 +2251,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 {
                     //draw the telegraph line
                     float telegraphAlpha = (60 + projectile.timeLeft - 600) / 30f * (600 - projectile.timeLeft) / 30f;
-                    spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/HeavenPetProjectileTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+                    spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/HeavenPetProjectileTelegraph"), projectile.Center + new Vector2(30 * projectile.scale, 0).RotatedBy(projectile.rotation) - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
                 }
                 else
                 {
@@ -2066,6 +2283,156 @@ namespace DeathsTerminus.NPCs.CataBoss
                         DelegateMethods.c_1 = new Color(255, 255, 255, 127) * 0.75f * projectile.Opacity;
                         Utils.DrawLaser(spriteBatch, tex7, value45 - Main.screenPosition, value45 + Vector2.UnitX.RotatedBy(projectile.rotation) * num528 - Main.screenPosition, vector90 / 2f, DelegateMethods.RainbowLaserDraw);
                     }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public class CataLastPrism : ModProjectile
+    {
+        public override string Texture => "Terraria/Projectile_633";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Last Prism");
+            Main.projFrames[projectile.type] = 5;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 18;
+            projectile.height = 18;
+            projectile.alpha = 0;
+            projectile.light = 1f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 600;
+        }
+
+        public override void AI()
+        {
+            projectile.scale = projectile.ai[1] + 1f;
+
+            Player player = Main.player[Main.npc[(int)projectile.ai[0]].target];
+
+            if (projectile.timeLeft <= 540 - 60)
+            {
+                projectile.hostile = true;
+
+                projectile.Center = Main.npc[(int)projectile.ai[0]].Center;
+
+                if (projectile.timeLeft == 540 - 60)
+                {
+                    Main.PlaySound(SoundID.Item122, projectile.Center);
+                }
+                else if (projectile.timeLeft % 60 == 0)
+                {
+                    Main.PlaySound(SoundID.Item15, projectile.Center);
+                }
+            }
+            else
+            {
+                projectile.hostile = false;
+
+                projectile.Center = Main.npc[(int)projectile.ai[0]].Center;
+            }
+
+            float maxTurn = 0.0175f / projectile.scale;
+
+            float rotationOffset = (player.Center - projectile.Center).ToRotation() - projectile.rotation;
+            while (rotationOffset > MathHelper.Pi)
+            {
+                rotationOffset -= MathHelper.TwoPi;
+            }
+            while (rotationOffset < -MathHelper.Pi)
+            {
+                rotationOffset += MathHelper.TwoPi;
+            }
+            if (rotationOffset > maxTurn)
+            {
+                projectile.rotation += maxTurn;
+            }
+            else if (rotationOffset < -maxTurn)
+            {
+                projectile.rotation -= maxTurn;
+            }
+            else
+            {
+                projectile.rotation = (player.Center - projectile.Center).ToRotation();
+            }
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            float point = 0f;
+            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center, projectile.Center + new Vector2(4096, 0).RotatedBy(projectile.rotation), 44 * projectile.scale, ref point);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Rectangle frame;
+            SpriteEffects effects;
+
+            //draw the prism
+            //adapted from last prism drawcode
+            Texture2D prismTexture = Main.projectileTexture[projectile.type];
+            frame = prismTexture.Frame(1, 5, 0, (projectile.timeLeft / (projectile.timeLeft <= 600 - 60 ? 1 : 3)) % 5);
+            effects = SpriteEffects.None;
+            Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(20 * projectile.scale, 0).RotatedBy(projectile.rotation);
+
+            spriteBatch.Draw(prismTexture, drawPosition, frame, Color.White, projectile.rotation + MathHelper.PiOver2, frame.Size() / 2, projectile.scale, effects, 0f);
+
+            float scaleFactor2 = (float)Math.Cos(Math.PI * 2f * (projectile.timeLeft / 30f)) * 2f + 2f;
+            if (projectile.timeLeft <= 540 - 60)
+            {
+                scaleFactor2 = 4f;
+            }
+            for (float num350 = 0f; num350 < 4f; num350 += 1f)
+            {
+                spriteBatch.Draw(prismTexture, drawPosition + new Vector2(0, 1).RotatedBy(num350 * (Math.PI * 2f) / 4f) * scaleFactor2, frame, Color.White.MultiplyRGBA(new Color(255, 255, 255, 0)) * 0.03f, projectile.rotation + MathHelper.PiOver2, frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+
+            if (projectile.timeLeft > 540 - 60)
+            {
+                //draw the telegraph line
+                float telegraphAlpha = (60 + projectile.timeLeft - 540) / 30f * (540 - projectile.timeLeft) / 30f;
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/HeavenPetProjectileTelegraph"), projectile.Center + new Vector2(30 * projectile.scale, 0).RotatedBy(projectile.rotation) - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+            }
+            else
+            {
+                //draw the beam
+                //adapted from last prism drawcode
+
+                for (int i = 0; i < 6; i++)
+                {
+                    //texture
+                    Texture2D tex7 = ModContent.GetTexture("Terraria/Projectile_632");
+                    //laser length
+                    float num528 = 4096;
+
+                    Color value42 = Main.hslToRgb(i / 6f, 1f, 0.5f);
+                    value42.A = 0;
+
+                    Vector2 drawOffset = new Vector2(4, 0).RotatedBy(projectile.timeLeft * 0.5f + i * MathHelper.TwoPi / 6);
+
+                    //start position
+                    Vector2 value45 = projectile.Center.Floor() + drawOffset + new Vector2(46 * projectile.scale, 0).RotatedBy(projectile.rotation);
+
+                    value45 += Vector2.UnitX.RotatedBy(projectile.rotation) * projectile.scale * 10.5f;
+                    num528 -= projectile.scale * 14.5f * projectile.scale;
+                    Vector2 vector90 = new Vector2(projectile.scale * 2);
+                    DelegateMethods.f_1 = 1f;
+                    DelegateMethods.c_1 = value42 * 0.75f * projectile.Opacity;
+                    _ = projectile.oldPos[0] + new Vector2((float)projectile.width, (float)projectile.height) / 2f + Vector2.UnitY * projectile.gfxOffY - Main.screenPosition;
+                    Utils.DrawLaser(spriteBatch, tex7, value45 - Main.screenPosition, value45 + Vector2.UnitX.RotatedBy(projectile.rotation) * num528 - Main.screenPosition, vector90, DelegateMethods.RainbowLaserDraw);
+                    DelegateMethods.c_1 = new Color(255, 255, 255, 127) * 0.75f * projectile.Opacity;
+                    Utils.DrawLaser(spriteBatch, tex7, value45 - Main.screenPosition, value45 + Vector2.UnitX.RotatedBy(projectile.rotation) * num528 - Main.screenPosition, vector90 / 2f, DelegateMethods.RainbowLaserDraw);
                 }
             }
 
@@ -2110,10 +2477,13 @@ namespace DeathsTerminus.NPCs.CataBoss
                 NPC boss = Main.npc[(int)projectile.ai[0]];
                 Player player = Main.player[boss.target];
 
-                float eta = 5f;
+                /*float eta = 5f;
                 float determinant = (boss.velocity.Y - player.velocity.Y) * (boss.velocity.Y - player.velocity.Y) - 4 * 0.45f * (boss.Center.Y - player.Center.Y + 240);
                 if (determinant >= 0)
-                    eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
+                    eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);*/
+
+                float determinant = Math.Max(0, (boss.velocity.Y - player.velocity.Y) * (boss.velocity.Y - player.velocity.Y) - 4 * 0.45f * (boss.Center.Y - player.Center.Y + 240));
+                float eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
                 Vector2 targetPoint = new Vector2(boss.Center.X + boss.velocity.X * eta, player.Center.Y + 240 + player.velocity.Y * eta + projectile.height);
                 Vector2 targetVelocity = (targetPoint - projectile.Center) / eta;
                 projectile.velocity += (targetVelocity - projectile.velocity) / 10f;
@@ -2146,10 +2516,10 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 Main.PlaySound(SoundID.NPCHit14, projectile.Center);
 
-                for (int i=0; i<8; i++)
+                for (int i=0; i<12; i++)
                 {
-                    Projectile.NewProjectile(projectile.Center, new Vector2(4, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
-                    Projectile.NewProjectile(projectile.Center, new Vector2(2, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
+                    Projectile.NewProjectile(projectile.Center, new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
+                    Projectile.NewProjectile(projectile.Center, new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
                 }
             }
         }
@@ -2224,6 +2594,165 @@ namespace DeathsTerminus.NPCs.CataBoss
             SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
 
             spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * 0.5f, projectile.rotation, new Vector2(24, 24), projectile.scale, effects, 0f);
+
+            return false;
+        }
+    }
+
+    public class MothProjectile : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_205";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Moth");
+            Main.projFrames[projectile.type] = 3;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 40;
+            projectile.height = 40;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 400;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            projectile.rotation = projectile.velocity.ToRotation() + MathHelper.Pi;
+            projectile.direction = projectile.velocity.X > 0 ? -1 : 1;
+            projectile.spriteDirection = projectile.direction;
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 5)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 3)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 3, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+            Vector2 drawOffset = new Vector2(0, -14);
+
+            spriteBatch.Draw(texture, projectile.Center + drawOffset - Main.screenPosition, frame, Color.White, projectile.rotation, frame.Size() / 2, projectile.scale, effects, 0f);
+
+            return false;
+        }
+    }
+
+
+    public class MothronProjectile : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_477";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Baby Mothron");
+            Main.projFrames[projectile.type] = 6;
+
+            ProjectileID.Sets.TrailCacheLength[projectile.type] = 5;
+            ProjectileID.Sets.TrailingMode[projectile.type] = 2;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 64;
+            projectile.height = 64;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 400;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            if (projectile.timeLeft > 400 - 33)
+            {
+                projectile.velocity *= 0.95f;
+            }
+            else
+            {
+                projectile.velocity.Y += projectile.velocity.Y * projectile.velocity.Y / (projectile.Center.Y - projectile.ai[0]);
+
+                projectile.velocity = projectile.velocity.SafeNormalize(Vector2.Zero) * 6f;
+            }
+            projectile.rotation = projectile.velocity.ToRotation() + MathHelper.Pi;
+            projectile.direction = projectile.velocity.X > 0 ? -1 : 1;
+            projectile.spriteDirection = projectile.direction;
+
+            //test for death via ray of sunshine
+            projectile.ai[1] += 5 * projectile.direction;
+            if (projectile.ai[1] < projectile.Center.X ^ projectile.direction == 1)
+            {
+                projectile.Kill();
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 4)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 6)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override void Kill(int timeLeft)
+        {
+            Main.PlaySound(SoundID.NPCDeath44, projectile.Center);
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 6, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            for (int i = projectile.oldPos.Length - 1; i >= 0; i--)
+            {
+                float alpha = (projectile.oldPos.Length - i) / (float)projectile.oldPos.Length;
+                spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i], frame.Size() / 2, projectile.scale, effects, 0f);
+            }
 
             return false;
         }
