@@ -198,96 +198,23 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (relativeVelocity.X * relativeVelocity.X / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ relativeVelocity.X < 0))
             {
                 //overshoot
-
-                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
-                if ((relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) < 0))
-                {
-                    //overshoot
-                    npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? -1 : 1);
-                }
-                else
-                {
-                    //undershoot
-                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
-                    //float a = 1;
-                    float b = (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X));
-                    float c = relativeVelocity.X * relativeVelocity.X;
-                    float determinant = b * b - 4 * c;
-                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
-
-                    npc.velocity.X += modifier * (goalOffset.X > 0 ? -1 : 1);
-                }
+                npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? -1 : 1);
             }
             else
             {
                 //undershoot
-
-                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
-                if ((relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) / 2 / maxXAcc > Math.Abs(goalOffset.X) && (goalOffset.X > 0 ^ (relativeVelocity.X + maxXAcc * (goalOffset.X > 0 ? -1 : 1)) < 0))
-                {
-                    //undershoot
-                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
-                    //float a = 1;
-                    float b = (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X));
-                    float c = relativeVelocity.X * relativeVelocity.X;
-                    float determinant = b * b - 4 * c;
-                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
-
-                    npc.velocity.X += modifier * (goalOffset.X > 0 ? -1 : 1);
-                }
-                else
-                {
-                    //undershoot
-                    npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? 1 : -1);
-                }
+                npc.velocity.X += maxXAcc * (goalOffset.X > 0 ? 1 : -1);
             }
-
-            //compute whether we'll overshoot or undershoot our Y goal at our current velocity
+            //compute whether we'll overshoot or undershoot our X goal at our current velocity
             if (relativeVelocity.Y * relativeVelocity.Y / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ relativeVelocity.Y < 0))
             {
                 //overshoot
-
-                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
-                if ((relativeVelocity.Y + maxYAcc * (goalOffset.X > 0 ? -1 : 1)) * (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) < 0))
-                {
-                    //overshoot
-                    npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? -1 : 1);
-                }
-                else
-                {
-                    //undershoot
-                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
-                    //float a = 1;
-                    float b = (2 * relativeVelocity.Y * (goalOffset.Y > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.Y));
-                    float c = relativeVelocity.Y * relativeVelocity.Y;
-                    float determinant = b * b - 4 * c;
-                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
-
-                    npc.velocity.Y += modifier * (goalOffset.Y > 0 ? -1 : 1);
-                }
+                npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? -1 : 1);
             }
             else
             {
                 //undershoot
-
-                //compute whether we'll overshoot or undershoot our X goal at our modified velocity
-                if ((relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) * (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) / 2 / maxYAcc > Math.Abs(goalOffset.Y) && (goalOffset.Y > 0 ^ (relativeVelocity.Y + maxYAcc * (goalOffset.Y > 0 ? -1 : 1)) < 0))
-                {
-                    //undershoot
-                    //modifier * modifier + (2 * relativeVelocity.X * (goalOffset.X > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.X)) * modifier + relativeVelocity.X * relativeVelocity.X == 0
-                    //float a = 1;
-                    float b = (2 * relativeVelocity.Y * (goalOffset.Y > 0 ? -1 : 1) - 2 * Math.Abs(goalOffset.Y));
-                    float c = relativeVelocity.Y * relativeVelocity.Y;
-                    float determinant = b * b - 4 * c;
-                    float modifier = (-b - (float)Math.Sqrt(determinant)) / 2;
-
-                    npc.velocity.Y += modifier * (goalOffset.Y > 0 ? -1 : 1);
-                }
-                else
-                {
-                    //undershoot
-                    npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? 1 : -1);
-                }
+                npc.velocity.Y += maxYAcc * (goalOffset.Y > 0 ? 1 : -1);
             }
         }
 
