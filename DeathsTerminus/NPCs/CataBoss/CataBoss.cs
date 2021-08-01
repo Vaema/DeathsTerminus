@@ -151,21 +151,21 @@ namespace DeathsTerminus.NPCs.CataBoss
                     SideScythesAttackHard();
                     break;
                 case 13:
-                    //
-                    npc.ai[0] = 14;
-                    break;
-                case 14:
                 case 21:
                     //5 secs each
                     SideBlastsAttackHard();
                     break;
-                case 15:
+                case 14:
                     //12 secs each
                     IceSpiralAttackHard();
                     break;
-                case 16:
+                case 15:
                     //2.5 secs each
                     SideSuperScythesAttack();
+                    break;
+                case 16:
+                    //9 secs each
+                    AncientDoomMinefield();
                     break;
                 case 17:
                     //6 secs each
@@ -331,6 +331,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                 for (int i = 0; i < numShots; i++)
                 {
                     Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
+
+                    Vector2 targetPoint = npc.Center + new Vector2(800, 0).RotatedBy(i * MathHelper.TwoPi / numShots);
+                    Vector2 launchPoint = targetPoint + new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
+                    launchPoint = targetPoint - new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
                 }
             }
 
@@ -364,6 +370,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                 for (int i = 0; i < numShots; i++)
                 {
                     Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots + npc.direction * (npc.ai[1] - 60) / 100f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
+
+                    Vector2 targetPoint = npc.Center + new Vector2(800, 0).RotatedBy(i * MathHelper.TwoPi / numShots + npc.direction * (npc.ai[1] - 60) / 100f);
+                    Vector2 launchPoint = targetPoint + new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 + npc.direction * (npc.ai[1] - 60) / 100f);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
+                    launchPoint = targetPoint - new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 + npc.direction * (npc.ai[1] - 60) / 100f);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
                 }
             }
             else if (npc.ai[1] >= 280 && npc.ai[1] < 440 && npc.ai[1] % 10 == 0 && Main.netMode != 1)
@@ -372,6 +384,12 @@ namespace DeathsTerminus.NPCs.CataBoss
                 for (int i = 0; i < numShots; i++)
                 {
                     Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * (npc.ai[1] - 280) / 100f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer);
+
+                    Vector2 targetPoint = npc.Center + new Vector2(800, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * (npc.ai[1] - 280) / 100f);
+                    Vector2 launchPoint = targetPoint + new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 - npc.direction * (npc.ai[1] - 280) / 100f);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
+                    launchPoint = targetPoint - new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 - npc.direction * (npc.ai[1] - 280) / 100f);
+                    Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f);
                 }
             }
 
@@ -801,7 +819,18 @@ namespace DeathsTerminus.NPCs.CataBoss
                 int numShots = 12;
                 for (int i = 0; i < numShots; i++)
                 {
-                    Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots - npc.direction * MathHelper.Pi / 2f * (Math.Cos((npc.ai[1] - 60) / 380f * MathHelper.TwoPi) - 1) / 2f) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+                    float rotationValue = - npc.direction * MathHelper.Pi / 2f * ((float)Math.Cos((npc.ai[1] - 60) / 380f * MathHelper.TwoPi) - 1) / 2f;
+
+                    Projectile.NewProjectile(npc.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / numShots + rotationValue) * 0.5f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai1: 1);
+
+                    if (npc.ai[1] % 10 == 0)
+                    {
+                        Vector2 targetPoint = npc.Center + new Vector2(800, 0).RotatedBy(i * MathHelper.TwoPi / numShots + rotationValue);
+                        Vector2 launchPoint = targetPoint + new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 + rotationValue);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f, ai1: 1);
+                        launchPoint = targetPoint - new Vector2(1920, 0).RotatedBy(i * MathHelper.TwoPi / numShots + MathHelper.PiOver2 + rotationValue);
+                        Projectile.NewProjectile(launchPoint, (targetPoint - launchPoint).SafeNormalize(Vector2.Zero) * 30f, ProjectileType<CataBossScythe>(), 80, 0f, Main.myPlayer, ai0: 120f, ai1: 1);
+                    }
                 }
             }
 
@@ -1070,12 +1099,11 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             if (npc.ai[1] < 60)
             {
-                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
-                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                 npc.spriteDirection = npc.direction;
-                Vector2 goalPosition = player.Center + new Vector2(0, -1) * 360;
+                Vector2 goalPosition = player.Center + new Vector2(0, -240) + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
 
-                FlyToPoint(goalPosition, player.velocity, 4f, 2f);
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
             }
             else
             {
@@ -1114,8 +1142,11 @@ namespace DeathsTerminus.NPCs.CataBoss
                             if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FishronPlatform>() && Main.projectile[i].ai[1] == 0)
                             {
                                 Main.projectile[i].ai[1] = 1;
-
-                                break;
+                            }
+                            else if (Main.projectile[i].active && Main.projectile[i].type == ProjectileType<FloatingBubble>() && Main.projectile[i].ai[1] < 0)
+                            {
+                                Main.projectile[i].ai[0] = 1f;
+                                Main.projectile[i].ai[1] = -0.2f;
                             }
                         }
                     }
@@ -1137,7 +1168,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                             }
                         }
 
-                        npc.velocity.Y = -36f;
+                        npc.velocity.Y = Math.Min(-36f, npc.velocity.Y - 36f);
                         npc.velocity.X = player.velocity.X + (player.Center.X - npc.Center.X) / 60f;
 
                         npc.direction = npc.velocity.X > 0 ? -1 : 1;
@@ -1268,9 +1299,9 @@ namespace DeathsTerminus.NPCs.CataBoss
                 Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<HeavenPetProjectile>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI, ai1: 0f);
                 Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataLastPrism>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI, ai1: 0f);
             }
-            npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-            npc.spriteDirection = npc.direction;
             Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
+
+            npc.spriteDirection = npc.direction;
 
             FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
 
@@ -1282,6 +1313,70 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
         }
 
+        private void AncientDoomMinefield()
+        {
+            Player player = Main.player[npc.target];
+
+            int numRings = 20;
+            int period = 4;
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+            }
+            else if (((int)npc.ai[1] - 60) / period <= numRings)
+            {
+                npc.velocity = Vector2.Zero;
+
+                //shoot inward-spiraling fireballs
+                if (npc.ai[1] == 60)
+                {
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossFireballRing>(), 80, 0f, Main.myPlayer, ai0: 1200, ai1: 1);
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossFireballRing>(), 80, 0f, Main.myPlayer, ai0: 1400, ai1: -1);
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossFireballRing>(), 80, 0f, Main.myPlayer, ai0: 1600, ai1: 1);
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossFireballRing>(), 80, 0f, Main.myPlayer, ai0: 1800, ai1: -1);
+                }
+
+                //make a whole boatload of mines in sequence
+                if ((npc.ai[1] - 60) % period == 0 && Main.netMode != 1)
+                {
+                    int i = ((int)npc.ai[1] - 60) / period;
+
+                    //ai0 is radius multiplier, ai1 is rotation
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossMine>(), 80, 0f, Main.myPlayer, ai0: 0, ai1: i);
+                }
+
+                if (npc.ai[1] == 60)
+                {
+                    Main.PlaySound(29, npc.Center, 89);
+                }
+            }
+            else
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 60;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.065f, maxYAcc: 0.065f);
+
+                if (npc.ai[1] == (1 + numRings) * period + 60)
+                {
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBusterSword>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI);
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 540)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
 
         public override bool CanHitPlayer(Player target, ref int cooldownSlot)
         {
@@ -2366,6 +2461,8 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 projectile.rotation = (player.Center - projectile.Center).ToRotation();
             }
+
+            Main.npc[(int)projectile.ai[0]].direction = (projectile.rotation > MathHelper.PiOver2 && projectile.rotation < 3 * MathHelper.PiOver2) ? -1 : 1;
         }
 
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
@@ -2453,6 +2550,9 @@ namespace DeathsTerminus.NPCs.CataBoss
             ProjectileID.Sets.TrailingMode[projectile.type] = 2;
         }
 
+        float bubbleShotProgress = 0f;
+        int bubbleCount = 0;
+
         public override void SetDefaults()
         {
             projectile.width = 100;
@@ -2477,16 +2577,29 @@ namespace DeathsTerminus.NPCs.CataBoss
                 NPC boss = Main.npc[(int)projectile.ai[0]];
                 Player player = Main.player[boss.target];
 
-                /*float eta = 5f;
-                float determinant = (boss.velocity.Y - player.velocity.Y) * (boss.velocity.Y - player.velocity.Y) - 4 * 0.45f * (boss.Center.Y - player.Center.Y + 240);
-                if (determinant >= 0)
-                    eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);*/
-
                 float determinant = Math.Max(0, (boss.velocity.Y - player.velocity.Y) * (boss.velocity.Y - player.velocity.Y) - 4 * 0.45f * (boss.Center.Y - player.Center.Y + 240));
                 float eta = Math.Max(3, (-(boss.velocity.Y - player.velocity.Y) + (float)Math.Sqrt(determinant)) / 0.9f);
                 Vector2 targetPoint = new Vector2(boss.Center.X + boss.velocity.X * eta, player.Center.Y + 240 + player.velocity.Y * eta + projectile.height);
                 Vector2 targetVelocity = (targetPoint - projectile.Center) / eta;
                 projectile.velocity += (targetVelocity - projectile.velocity) / 10f;
+
+                bubbleShotProgress += Math.Abs(projectile.velocity.X);
+                if (bubbleShotProgress >= 80)
+                {
+                    bubbleShotProgress = 0;
+                    bubbleCount++;
+                    if (bubbleCount == 4)
+                    {
+                        bubbleCount = 0;
+                        if (Main.netMode != 1)
+                            Projectile.NewProjectile(projectile.Center, Vector2.Zero, ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 0.995f, ai1: 0.1f);
+                    }
+                    else
+                    {
+                        if (Main.netMode != 1)
+                            Projectile.NewProjectile(projectile.Center, Vector2.Zero, ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 0.95f, ai1: -0.08f);
+                    }
+                }
             }
             else
             {
@@ -2516,10 +2629,12 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 Main.PlaySound(SoundID.NPCHit14, projectile.Center);
 
+                NPC boss = Main.npc[(int)projectile.ai[0]];
+
                 for (int i=0; i<12; i++)
                 {
-                    Projectile.NewProjectile(projectile.Center, new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
-                    Projectile.NewProjectile(projectile.Center, new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer);
+                    Projectile.NewProjectile(projectile.Center, new Vector2(boss.velocity.X * 0.5f, 0) + new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 0.99f, ai1: 0.08f);
+                    Projectile.NewProjectile(projectile.Center, new Vector2(boss.velocity.X * 0.5f, 0) + new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 0.99f, ai1: 0.08f);
                 }
             }
         }
@@ -2575,8 +2690,8 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override void AI()
         {
-            projectile.velocity *= 0.99f;
-            projectile.velocity.Y -= 0.08f;
+            projectile.velocity *= projectile.ai[0];
+            projectile.velocity.Y -= projectile.ai[1];
 
             projectile.rotation += projectile.velocity.X * 0.1f;
         }
@@ -2663,7 +2778,6 @@ namespace DeathsTerminus.NPCs.CataBoss
             return false;
         }
     }
-
 
     public class MothronProjectile : ModProjectile
     {
@@ -2754,6 +2868,309 @@ namespace DeathsTerminus.NPCs.CataBoss
                 spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i], frame.Size() / 2, projectile.scale, effects, 0f);
             }
 
+            return false;
+        }
+    }
+
+    public class CataBossMine : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_" + NPCID.AncientDoom;
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Celestial Doom");
+
+            Main.projFrames[projectile.type] = 5;
+        }
+
+        private int sigilCount
+        {
+            get {
+                return projectile.ai[1] == 0 ? 1 : (int)projectile.ai[1] * 4;
+            }
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 48;
+            projectile.height = 48;
+            projectile.alpha = 0;
+            projectile.light = 0.5f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 480;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            float mineTime = 90f;
+
+            if ((480 - projectile.timeLeft) < mineTime)
+            {
+                projectile.hostile = false;
+
+                projectile.ai[0] += 2.5f * projectile.ai[1] * (mineTime - (480 - projectile.timeLeft)) / mineTime;
+
+                projectile.alpha = (int)(256 - 128 * ((480 - projectile.timeLeft) / mineTime));
+            }
+            else
+            {
+                projectile.hostile = true;
+                projectile.alpha = 0;
+            }
+
+            projectile.rotation = projectile.ai[1];
+
+            if (projectile.timeLeft < 30)
+            {
+                Vector2 oldCenter = projectile.Center;
+                projectile.width += 4;
+                projectile.height += 4;
+                projectile.Center = oldCenter;
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 4)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 5)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            for (int i = 0; i < sigilCount; i++)
+            {
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[0] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount);
+                float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+                float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+                if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < projectile.width / 2)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            for (int i = 0; i < sigilCount; i++)
+            {
+                Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(projectile.ai[0] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / sigilCount);
+
+                if (projectile.timeLeft >= 30)
+                {
+                    Texture2D texture = Main.projectileTexture[projectile.type];
+
+                    Rectangle frame = texture.Frame(1, 5, 0, projectile.frame);
+                    SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+                    spriteBatch.Draw(texture, drawPosition, frame, Color.White * (1 - projectile.alpha / 255f), 0f, frame.Size() / 2, projectile.scale, effects, 0f);
+                }
+                else
+                {
+                    Texture2D texture = mod.GetTexture("NPCs/CataBoss/CelestialDoom");
+
+                    Rectangle frame = texture.Frame(1, 5, 0, projectile.frame);
+                    SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+                    spriteBatch.Draw(texture, drawPosition, frame, Color.White * (1 - projectile.alpha / 255f) * (1 - projectile.width / 168f), 0f, frame.Size() / 2, projectile.width / 48f, effects, 0f);
+
+                    spriteBatch.Draw(texture, drawPosition, frame, Color.White * (1 - projectile.alpha / 255f) * (projectile.timeLeft / 30f), 0f, frame.Size() / 2, projectile.scale, effects, 0f);
+                }
+            }
+            return false;
+        }
+    }
+
+    public class CataBusterSword : ModProjectile
+    {
+        public override string Texture => "Terraria/Item_426";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Buster Sword");
+            Main.projFrames[projectile.type] = 1;
+
+            ProjectileID.Sets.TrailCacheLength[projectile.type] = 5;
+            ProjectileID.Sets.TrailingMode[projectile.type] = 2;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 140;
+            projectile.height = 140;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 2f;
+            projectile.timeLeft = 400;
+        }
+
+        public override void AI()
+        {
+            if (projectile.timeLeft == 400)
+            {
+                projectile.direction = Main.npc[(int)projectile.ai[0]].spriteDirection;
+                projectile.spriteDirection = projectile.direction;
+
+                projectile.rotation = projectile.AngleTo(Main.player[Main.npc[(int)projectile.ai[0]].target].Center) - 3 * MathHelper.PiOver4;
+            }
+
+            if (projectile.spriteDirection != Main.npc[(int)projectile.ai[0]].spriteDirection)
+            {
+                projectile.rotation = 3 * MathHelper.PiOver2 - projectile.rotation;
+            }
+
+            projectile.direction = Main.npc[(int)projectile.ai[0]].spriteDirection;
+            projectile.spriteDirection = projectile.direction;
+
+            projectile.rotation += (float)Math.Sin(projectile.timeLeft / 400f * MathHelper.Pi) * 50f * MathHelper.Pi / 400f / 2f * projectile.direction;
+            projectile.Center = Main.npc[(int)projectile.ai[0]].Center;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            float point = 0f;
+            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center, projectile.Center + new Vector2(140, -140).RotatedBy(projectile.rotation), 20 * projectile.scale, ref point);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame();
+
+            for (int i = projectile.oldPos.Length - 1; i >= 0; i--)
+            {
+                SpriteEffects effects = projectile.oldSpriteDirection[i] == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                Vector2 center = projectile.oldSpriteDirection[i] == 1 ? new Vector2(0, 80) : new Vector2(70, 80);
+                float rotationOffset = projectile.oldSpriteDirection[i] == 1 ? 0 : MathHelper.PiOver2;
+                float alpha = (projectile.oldPos.Length - i) / (float)projectile.oldPos.Length;
+
+                spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i] + rotationOffset, center, projectile.scale, effects, 0f);
+            }
+
+            return false;
+        }
+    }
+
+
+    public class CataBossFireballRing : ModProjectile
+    {
+        public override string Texture => "Terraria/Projectile_" + ProjectileID.CultistBossFireBall;
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Celestial Flame");
+
+            Main.projFrames[projectile.type] = 4;
+        }
+
+        int numFireballs = 32;
+
+        public override void SetDefaults()
+        {
+            projectile.width = 38;
+            projectile.height = 38;
+            projectile.alpha = 0;
+            projectile.light = 0.5f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 90;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            projectile.rotation += projectile.ai[1] * 0.02f;
+            projectile.ai[0] -= 20f / 3f;
+
+            if (projectile.timeLeft <= 30)
+            {
+                projectile.alpha += 8;
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 4)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 4)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            for (int i = 0; i < numFireballs; i++)
+            {
+                Vector2 circleCenter = projectile.Center + new Vector2(projectile.ai[0] * projectile.scale, 0).RotatedBy(projectile.rotation + i * MathHelper.TwoPi / numFireballs);
+                float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+                float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+                if (new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < projectile.width / 2)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            float trailLength = 10f;
+
+            for (int i = 0; i < numFireballs; i++)
+            {
+                for (int j = 0; j < trailLength; j++)
+                {
+                    float oldAI0 = projectile.ai[0] + (20f / 3f) * j;
+                    float oldRotation = projectile.rotation - projectile.ai[1] * 0.02f * j;
+                    float alpha = 1 - j / trailLength;
+
+                    Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(oldAI0 * projectile.scale, 0).RotatedBy(oldRotation + i * MathHelper.TwoPi / numFireballs);
+
+                    Texture2D texture = Main.projectileTexture[projectile.type];
+
+                    Rectangle frame = texture.Frame(1, 4, 0, projectile.frame);
+                    SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+                    spriteBatch.Draw(texture, drawPosition, frame, Color.White * (1 - projectile.alpha / 255f) * alpha, oldRotation, frame.Size() / 2, projectile.scale * alpha, effects, 0f);
+                }
+            }
             return false;
         }
     }
