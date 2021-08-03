@@ -59,8 +59,6 @@ namespace DeathsTerminus.Items
                 NPC.SpawnOnPlayer(player.whoAmI, ModContent.NPCType<CataBoss>());
             }
 
-            Main.PlaySound(new Terraria.Audio.LegacySoundStyle(SoundID.Zombie, 105));
-
             return true;
         }
     }
