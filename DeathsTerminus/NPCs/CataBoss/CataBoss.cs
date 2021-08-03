@@ -25,6 +25,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         private bool drawSpawnTransitionRing;
         private Color spawnTransitionColor = Color.Purple;
         private bool drawAura = false;
+        private int auraCounter = 0;
 
         public override void SetStaticDefaults()
         {
@@ -102,8 +103,14 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 iceShieldCooldown--;
             }
+            if (drawAura)
+            {
+                auraCounter++;
+            }
 
             npc.life = npc.lifeMax;
+
+            //npc.ai[0] = 26;
 
             switch (npc.ai[0])
             {
@@ -193,13 +200,32 @@ namespace DeathsTerminus.NPCs.CataBoss
                     break;
                 case 24:
                     //15 secs each
-                    //attack uses ice as standard, has scythes coming from (orthogonal? diagonal?), and has occasional barrages of predictive moths from the sides
                     IceScythesAttack();
                     break;
                 case 25:
+                    //12 secs each
                     AncientDoomMinefieldHard();
                     break;
                 case 26:
+                    //13 secs each
+                    FishronsMothsAttack();
+                    break;
+                /*case 27:
+                    //? secs each
+                    //MothsAndMothronsAndLampAttack();
+                case 28:
+                    //? secs each
+                    //SomeSortOfUltimateScythesAttack();
+                    break;
+                case 29:
+                    //7 secs each
+                    //Phase3To4Animation();
+                    break;*/
+                case 27:
+                    //26 secs each
+                    MegaSprocketVsMegaBaddySuperCinematicDesperationAttack();
+                    break;
+                case 28:
                     npc.ai[0] = 0;
                     break;
             }
@@ -654,14 +680,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                         Projectile.NewProjectile(npc.Center + new Vector2(npc.direction, 0) * 1500, new Vector2(-npc.direction * 5, 0), ProjectileType<SunLamp>(), 80, 0f, Main.myPlayer);
                     }
                 }
-
-                //deepened mothron singing sound, only use for the buffed attack
-                /*
-                if (npc.ai[1] == 120)
-                {
-                    Main.PlaySound(SoundID.Zombie, (int)npc.Center.X, (int)npc.Center.Y, 73, volumeScale: 2f, pitchOffset: -1);
-                }
-                */
 
                 if (Main.netMode != 1 && npc.ai[1] >= 90 && npc.ai[1] <= 480 && npc.ai[1] % 4 == 0)
                 {
@@ -1415,7 +1433,13 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
 
-                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.05f, maxYAcc: 0.05f);
+
+                if (npc.ai[1] == 59)
+                {
+                    npc.Center = goalPosition;
+                    npc.velocity = Vector2.Zero;
+                }
             }
             else
             {
@@ -1478,7 +1502,13 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
 
-                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.05f, maxYAcc: 0.05f);
+
+                if (npc.ai[1] == 59)
+                {
+                    npc.Center = goalPosition;
+                    npc.velocity = Vector2.Zero;
+                }
             }
             else if (((int)npc.ai[1] - 60) / period <= numRings)
             {
@@ -1519,7 +1549,113 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
 
             npc.ai[1]++;
-            if (npc.ai[1] == 540)
+            if (npc.ai[1] == 720)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+
+        private void FishronsMothsAttack()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.05f, maxYAcc: 0.05f);
+
+                if (npc.ai[1] == 59)
+                {
+                    npc.Center = goalPosition;
+                    npc.velocity = Vector2.Zero;
+                }
+            }
+            else
+            {
+                onSlimeMount = true;
+
+                npc.velocity.Y += 0.6f;
+
+                if (npc.ai[1] % 120 == 40)
+                {
+                    npc.velocity.Y = -32f;
+                }
+                else if (npc.ai[1] % 120 == 60)
+                {
+                    float direction = player.velocity.X > 0 ? 1 : -1;
+                    npc.position = player.Center + new Vector2(-direction * 480, -3000);
+                    npc.velocity = Vector2.Zero;
+
+                    if (Main.netMode != 1)
+                    {
+                        Projectile.NewProjectile(player.Center + new Vector2(direction * 2400, 0), new Vector2(-direction * 32, 0), ProjectileType<DoomedFishron>(), 80, 0f, Main.myPlayer);
+                        for (int i = 1; i <= 50; i++)
+                        {
+                            float yOffset = (float)(Math.Sqrt(1.5f * i - 0.5f)) * 256;
+                            Projectile.NewProjectile(player.Center + new Vector2(direction * 2400 - 0.5f * direction * Math.Abs(yOffset), yOffset), new Vector2(-direction * 32, 0), ProjectileType<MothProjectile>(), 80, 0f, Main.myPlayer);
+                            Projectile.NewProjectile(player.Center + new Vector2(direction * 2400 - 0.5f * direction * Math.Abs(yOffset), -yOffset), new Vector2(-direction * 32, 0), ProjectileType<MothProjectile>(), 80, 0f, Main.myPlayer);
+                        }
+                    }
+                }
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 780)
+            {
+                onSlimeMount = false;
+
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void MegaSprocketVsMegaBaddySuperCinematicDesperationAttack()
+        {
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] == 60 && Main.netMode != 1)
+            {
+                Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<MegaBaddy>(), 80, 0f, Main.myPlayer, ai0: player.whoAmI);
+            }
+            else if (npc.ai[1] == 120 && Main.netMode != 1)
+            {
+                Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<MegaSprocket>(), 80, 0f, Main.myPlayer, ai0: npc.whoAmI, ai1: 2f);
+            }
+
+            if (npc.ai[1] < 60)
+            {
+                npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+            }
+            else if (npc.ai[1] >= 60 && npc.ai[1] < 120)
+            {
+                npc.velocity = Vector2.Zero;
+            }
+            else
+            {
+                if (npc.ai[1] == 120)
+                {
+                    npc.ai[2] = npc.Center.X;
+                    npc.ai[3] = npc.Center.Y;
+                }
+
+                npc.direction = npc.velocity.X < 0 ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = new Vector2(npc.ai[2], npc.ai[3]) * 2 - player.Center;
+
+                FlyToPoint(goalPosition, Vector2.Zero, maxXAcc: 0.5f, maxYAcc: 0.5f);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 1620)
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
@@ -1655,9 +1791,9 @@ namespace DeathsTerminus.NPCs.CataBoss
 
                         for (int k = 0; k < 8; k++)
                         {
-                            Vector2 individualOffset = new Vector2(4, 0).RotatedBy(k * MathHelper.TwoPi / 8 + Main.time / 20f);
+                            Vector2 individualOffset = new Vector2(8 + 2 * (float)Math.Sin(auraCounter / 10f), 0).RotatedBy(k * MathHelper.TwoPi / 8 + auraCounter / 20f);
 
-                            spriteBatch.Draw(silhouetteTexture, center - Main.screenPosition + silhouetteOffset + individualOffset, npc.frame, spawnTransitionColor * alpha * 0.5f, 0f, npc.frame.Size() / 2f, 1f, effects, 0f);
+                            spriteBatch.Draw(silhouetteTexture, center - Main.screenPosition + silhouetteOffset + individualOffset, npc.frame, spawnTransitionColor * (alpha * 0.5f * ((3 - (float)Math.Sin(auraCounter / 10f)) / 4f)), 0f, npc.frame.Size() / 2f, 1f, effects, 0f);
                         }
                     }
 
@@ -2948,6 +3084,119 @@ namespace DeathsTerminus.NPCs.CataBoss
         }
     }
 
+    public class DoomedFishron : ModProjectile
+    {
+        public override string Texture => "Terraria/NPC_370";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Doomed Fishron");
+            Main.projFrames[projectile.type] = 8;
+
+            ProjectileID.Sets.TrailCacheLength[projectile.type] = 5;
+            ProjectileID.Sets.TrailingMode[projectile.type] = 2;
+        }
+
+        float bubbleShotProgress = 0f;
+
+        public override void SetDefaults()
+        {
+            projectile.width = 100;
+            projectile.height = 100;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 90;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            projectile.rotation = projectile.velocity.ToRotation();
+            projectile.direction = projectile.velocity.X > 0 ? 1 : -1;
+            projectile.spriteDirection = projectile.direction;
+
+            bubbleShotProgress += Math.Abs(projectile.velocity.X);
+
+            float bubbleShotProgressRequired = 160 * 200 / (200f + projectile.timeLeft);
+
+            if (bubbleShotProgress >= bubbleShotProgressRequired)
+            {
+                bubbleShotProgress -= bubbleShotProgressRequired;
+                if (Main.netMode != 1)
+                {
+                    Projectile.NewProjectile(projectile.Center - new Vector2(projectile.direction * bubbleShotProgress, 0), Vector2.Zero, ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f, ai1: 0.05f);
+                    Projectile.NewProjectile(projectile.Center - new Vector2(projectile.direction * bubbleShotProgress, 0), Vector2.Zero, ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f, ai1: -0.05f);
+                }
+            }
+
+            if (projectile.timeLeft == 60)
+            {
+                if (Main.netMode != 1)
+                {
+                    for (int i = 0; i < 12; i++)
+                    {
+                        Projectile.NewProjectile(projectile.Center, new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f);//, ai0: 0.99f, ai1: 0.08f);
+                        Projectile.NewProjectile(projectile.Center, new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f);//, ai0: 0.99f, ai1: 0.08f);
+                    }
+                }
+            }
+
+            //frame stuff
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 3)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 8)
+                {
+                    projectile.frame = 0;
+                }
+            }
+        }
+
+        public override void Kill(int timeLeft)
+        {
+            Main.PlaySound(SoundID.NPCHit14, projectile.Center);
+
+            for (int i = 0; i < 12; i++)
+            {
+                Projectile.NewProjectile(projectile.Center, new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f);//, ai0: 0.99f, ai1: 0.08f);
+                Projectile.NewProjectile(projectile.Center, new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 8), ProjectileType<FloatingBubble>(), 80, 0f, Main.myPlayer, ai0: 1f);//, ai0: 0.99f, ai1: 0.08f);
+            }
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame(1, 8, 0, projectile.frame);
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            for (int i = projectile.oldPos.Length - 1; i >= 0; i--)
+            {
+                float alpha = (projectile.oldPos.Length - i) / (float)projectile.oldPos.Length;
+                spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i], frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+
+            spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Teal * 0.25f, projectile.velocity.ToRotation(), new Vector2(0, 8), new Vector2(projectile.velocity.Length(), projectile.width / 16f), SpriteEffects.None, 0f);
+            spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/CataBossScytheTelegraph"), projectile.Center - Main.screenPosition, new Rectangle(0, 0, 64, 16), Color.Teal * 0.25f, (-projectile.velocity).ToRotation(), new Vector2(0, 8), new Vector2(projectile.width / 128f, projectile.width / 16f), SpriteEffects.None, 0f);
+
+            return false;
+        }
+    }
+
     public class FloatingBubble : ModProjectile
     {
         public override string Texture => "Terraria/NPC_371";
@@ -3589,6 +3838,434 @@ namespace DeathsTerminus.NPCs.CataBoss
                     spriteBatch.Draw(texture, drawPosition, frame, Color.White * (1 - projectile.alpha / 255f) * alpha, oldRotation, frame.Size() / 2, projectile.scale * alpha, effects, 0f);
                 }
             }
+            return false;
+        }
+    }
+
+    public class MegaSprocket : ModProjectile
+    {
+        public override string Texture => "DeathsTerminus/NPCs/CataBoss/HeavenPetProjectile";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Mega Sprocket");
+            Main.projFrames[projectile.type] = 7;
+        }
+
+        private const int lifeTime = 1500;
+
+        private float cogRotation = 0;
+
+        public override void SetDefaults()
+        {
+            projectile.width = 18;
+            projectile.height = 18;
+            projectile.alpha = 0;
+            projectile.light = 1f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = lifeTime;
+        }
+
+        public override void AI()
+        {
+            projectile.scale = projectile.ai[1] + 1f;
+            Vector2 oldCenter = projectile.Center;
+            projectile.width = (int)(projectile.scale * 18);
+            projectile.height = (int)(projectile.scale * 18);
+            projectile.Center = oldCenter;
+
+            if (projectile.timeLeft == lifeTime)
+            {
+                for (int i=0; i < 6; i++)
+                {
+                    if (Main.netMode != 1)
+                        Projectile.NewProjectile(projectile.Center, new Vector2(1, 0).RotatedBy(i * MathHelper.TwoPi / 6f), ProjectileType<MegaSprocketPrism>(), 80, 0f, Main.myPlayer, ai0: i, ai1: projectile.whoAmI);
+                }
+            }
+
+            projectile.frameCounter++;
+            if (projectile.frameCounter == 3)
+            {
+                projectile.frameCounter = 0;
+                projectile.frame++;
+                if (projectile.frame == 7)
+                {
+                    projectile.frame = 0;
+                }
+            }
+
+            projectile.localAI[0]++;
+            cogRotation += projectile.localAI[0] / 50000f + projectile.localAI[0] * projectile.localAI[0] / 100000000f;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            Vector2 circleCenter = projectile.Center;
+            float nearestX = Math.Max(targetHitbox.X, Math.Min(circleCenter.X, targetHitbox.X + targetHitbox.Size().X));
+            float nearestY = Math.Max(targetHitbox.Y, Math.Min(circleCenter.Y, targetHitbox.Y + targetHitbox.Size().Y));
+            return new Vector2(circleCenter.X - nearestX, circleCenter.Y - nearestY).Length() < projectile.width / 2;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Rectangle frame;
+            SpriteEffects effects;
+
+            //draw the pet
+            Texture2D texture = Main.projectileTexture[projectile.type];
+            frame = texture.Frame(1, 7, 0, projectile.frame);
+            effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            float wingRotation = projectile.velocity.X * 0.1f;
+
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White, wingRotation, frame.Size() / 2, projectile.scale, effects, 0f);
+
+            Texture2D texture2 = mod.GetTexture("NPCs/CataBoss/HeavenPetProjectile_Cog");
+            frame = texture2.Frame();
+            effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            spriteBatch.Draw(texture2, projectile.Center - Main.screenPosition, frame, Color.White, cogRotation, frame.Size() / 2, projectile.scale, effects, 0f);
+
+            return false;
+        }
+    }
+
+    public class MegaSprocketPrism : ModProjectile
+    {
+        public override string Texture => "Terraria/Projectile_633";
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Last Prism");
+            Main.projFrames[projectile.type] = 5;
+        }
+
+        private const int lifeTime = 1200;
+        private bool firingPrism
+        {
+            get { return projectile.timeLeft <= lifeTime - 120; }
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 18;
+            projectile.height = 18;
+            projectile.alpha = 0;
+            projectile.light = 1f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = lifeTime;
+        }
+
+        public override void AI()
+        {
+            if (projectile.localAI[0] == 0)
+            {
+                projectile.rotation = projectile.velocity.ToRotation();
+            }
+
+            Projectile owner = Main.projectile[(int)projectile.ai[1]];
+
+            float radius = 48 + Math.Max(0, (projectile.localAI[0] - 120));
+            projectile.rotation += projectile.localAI[0] / 50000f + projectile.localAI[0] * projectile.localAI[0] / 100000000f;
+
+            projectile.velocity = owner.Center + new Vector2(radius, 0).RotatedBy(projectile.rotation) - projectile.Center;
+
+            projectile.hostile = firingPrism;
+
+            projectile.localAI[0]++;
+
+            if (projectile.timeLeft == lifeTime - 120)
+            {
+                Main.PlaySound(SoundID.Item122, projectile.Center);
+            }
+            else if (projectile.timeLeft % 60 == 0)
+            {
+                Main.PlaySound(SoundID.Item15, projectile.Center);
+            }
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            float point = 0f;
+            return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), projectile.Center + new Vector2(20, 0), projectile.Center + new Vector2(4096, 0).RotatedBy(projectile.rotation), 44 * projectile.scale, ref point);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Rectangle frame;
+            SpriteEffects effects;
+
+            //draw the prism
+            //adapted from last prism drawcode
+            Texture2D prismTexture = Main.projectileTexture[projectile.type];
+            frame = prismTexture.Frame(1, 5, 0, (projectile.timeLeft / (projectile.timeLeft <= 600 - 60 ? 1 : 3)) % 5);
+            effects = SpriteEffects.None;
+            Vector2 drawPosition = projectile.Center - Main.screenPosition;
+
+            spriteBatch.Draw(prismTexture, drawPosition, frame, Color.White, projectile.rotation + MathHelper.PiOver2, frame.Size() / 2, projectile.scale, effects, 0f);
+
+            float scaleFactor2 = (float)Math.Cos(Math.PI * 2f * (projectile.timeLeft / 30f)) * 2f + 2f;
+            if (projectile.timeLeft <= lifeTime - 120)
+            {
+                scaleFactor2 = 4f;
+            }
+            for (float num350 = 0f; num350 < 4f; num350 += 1f)
+            {
+                spriteBatch.Draw(prismTexture, drawPosition + new Vector2(0, 1).RotatedBy(num350 * (Math.PI * 2f) / 4f) * scaleFactor2, frame, Color.White.MultiplyRGBA(new Color(255, 255, 255, 0)) * 0.03f, projectile.rotation + MathHelper.PiOver2, frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+
+            if (projectile.timeLeft > lifeTime - 120)
+            {
+                //draw the telegraph line
+                float telegraphAlpha = (120 - lifeTime + projectile.timeLeft) / 30f * (lifeTime - 60 - projectile.timeLeft) / 30f;
+                spriteBatch.Draw(mod.GetTexture("NPCs/CataBoss/HeavenPetProjectileTelegraph"), projectile.Center + new Vector2(10 * projectile.scale, 0).RotatedBy(projectile.rotation) - Main.screenPosition, new Rectangle(0, 0, 1, 1), Color.White * telegraphAlpha, projectile.rotation, new Vector2(0, 0.5f), new Vector2(4096, 1), SpriteEffects.None, 0f);
+            }
+            if (firingPrism)
+            {
+                //draw the beam
+                //adapted from last prism drawcode
+
+                for (int i = 0; i < 6; i++)
+                {
+                    //texture
+                    Texture2D tex7 = ModContent.GetTexture("Terraria/Projectile_632");
+                    //laser length
+                    float num528 = 1200 - (48 + Math.Max(0, (projectile.localAI[0] - 120))) - 64;
+                    num528 = num528 * (1 + 30f / Math.Max(1, projectile.timeLeft - 60));
+
+                    //Prisms here are different, each one is a different color
+                    Color value42 = Main.hslToRgb((projectile.ai[0] / 6f + projectile.localAI[0] / 360f) % 1, 1f, 0.5f);
+                    value42.A = 0;
+
+                    Vector2 drawOffset = new Vector2(4, 0).RotatedBy(projectile.timeLeft * 0.5f + i * MathHelper.TwoPi / 6);
+
+                    //start position
+                    Vector2 value45 = projectile.Center.Floor() + drawOffset + new Vector2(26 * projectile.scale, 0).RotatedBy(projectile.rotation);
+
+                    value45 += Vector2.UnitX.RotatedBy(projectile.rotation) * projectile.scale * 10.5f;
+                    num528 -= projectile.scale * 14.5f * projectile.scale;
+                    Vector2 vector90 = new Vector2(projectile.scale * 2);
+                    DelegateMethods.f_1 = 1f;
+                    DelegateMethods.c_1 = value42 * 0.75f * projectile.Opacity;
+                    _ = projectile.oldPos[0] + new Vector2((float)projectile.width, (float)projectile.height) / 2f + Vector2.UnitY * projectile.gfxOffY - Main.screenPosition;
+                    Utils.DrawLaser(spriteBatch, tex7, value45 - Main.screenPosition, value45 + Vector2.UnitX.RotatedBy(projectile.rotation) * num528 - Main.screenPosition, vector90, DelegateMethods.RainbowLaserDraw);
+                    DelegateMethods.c_1 = new Color(255, 255, 255, 127) * 0.75f * projectile.Opacity;
+                    Utils.DrawLaser(spriteBatch, tex7, value45 - Main.screenPosition, value45 + Vector2.UnitX.RotatedBy(projectile.rotation) * num528 - Main.screenPosition, vector90 / 2f, DelegateMethods.RainbowLaserDraw);
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public class MegaBaddy : ModProjectile
+    {
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Mysterious Presence");
+            Main.projFrames[projectile.type] = 7;
+        }
+
+        private const int initTime = 60;
+        private const int lifeTime = 1200;
+        private const int fadeTime = 180;
+        private const float projectileRadius = 1200;
+
+        public override void SetDefaults()
+        {
+            projectile.width = 2;
+            projectile.height = 2;
+            projectile.alpha = 0;
+            projectile.light = 1f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 2f;
+            projectile.timeLeft = initTime + lifeTime + fadeTime;
+        }
+
+        public override void AI()
+        {
+            if (projectile.timeLeft > lifeTime + fadeTime)
+            {
+                projectile.scale -= 1 / 60f;
+            }
+            else if (projectile.timeLeft > fadeTime)
+            {
+                float increment = 1 / 16f + (lifeTime - (projectile.timeLeft - fadeTime)) / (float)lifeTime / 6f;
+                projectile.localAI[0] += increment;
+
+                if (projectile.localAI[0] >= 1 && Main.netMode != 1)
+                {
+                    projectile.localAI[0] -= 1;
+
+                    for (int i = 0; i < 6; i++)
+                    {
+                        float shotExtraTime = projectile.localAI[0] / increment;
+                        float shotRotation = (lifeTime - (projectile.timeLeft - fadeTime) - shotExtraTime) * (lifeTime - (projectile.timeLeft - fadeTime) - shotExtraTime) / 50000f + i * MathHelper.TwoPi / 6f;
+                        Projectile.NewProjectile(projectile.Center + new Vector2(projectileRadius, 0).RotatedBy(shotRotation) + new Vector2(-4, 0).RotatedBy(shotRotation) * shotExtraTime, new Vector2(-4, 0).RotatedBy(shotRotation), ProjectileType<Shadow>(), 80, 0f, Main.myPlayer);
+                    }
+                }
+            }
+            else
+            {
+                projectile.hostile = false;
+            }
+
+            if (projectile.timeLeft < 690)
+            {
+                projectile.alpha = (int)(255 - (projectile.timeLeft / 690f) * 255);
+            }
+
+            projectile.rotation = projectile.DirectionTo(Main.player[(int)projectile.ai[0]].Center).ToRotation();
+            projectile.spriteDirection = projectile.DirectionTo(Main.player[(int)projectile.ai[0]].Center).X > 0 ? 1 : -1;
+        }
+
+        public override bool? CanHitNPC(NPC target)
+        {
+            return false;
+        }
+
+        public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
+        {
+            Vector2 circleCenter = projectile.Center;
+
+            float furthestX = targetHitbox.X + targetHitbox.Size().X / 2 - circleCenter.X > 0 ? targetHitbox.X + targetHitbox.Size().X : targetHitbox.X;
+            float furthestY = targetHitbox.Y + targetHitbox.Size().Y / 2 - circleCenter.Y > 0 ? targetHitbox.Y + targetHitbox.Size().Y : targetHitbox.Y;
+            return new Vector2(circleCenter.X - furthestX, circleCenter.Y - furthestY).Length() > projectileRadius;
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture;
+            Rectangle frame;
+            float numDraws;
+            SpriteEffects effects = SpriteEffects.None;
+
+            float alphaModifier = 1 - projectile.alpha / 255f;
+
+            //draw the baddy
+            //draw the baddy's particles
+            texture = mod.GetTexture("NPCs/CataBoss/ShadowParticle");
+            numDraws = 1200;
+            Rectangle[] frameList = new Rectangle[]
+            {
+                new Rectangle(0,0,14,14),
+                new Rectangle(16,4,10,10),
+                new Rectangle(28,6,8,8)
+            };
+            for (int i=0; i < numDraws; i++)
+            {
+                frame = frameList[i % 3];
+
+                float distanceInwards = (i * i + (i % 3 + 1) * (lifeTime - projectile.timeLeft)) % 60;
+                float rotationOffset = (i * i) % numDraws + (i * i + (i % 3 + 1) * (lifeTime - projectile.timeLeft)) / 60;
+                float alpha = (60 - distanceInwards) / 60;
+                spriteBatch.Draw(texture, projectile.Center + new Vector2(projectileRadius - distanceInwards, 0).RotatedBy(i * MathHelper.TwoPi / numDraws + rotationOffset) - Main.screenPosition, frame, Color.White * alpha * alphaModifier, 0f, frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+            texture = mod.GetTexture("NPCs/CataBoss/ShadowParticleBig");
+            frame = texture.Frame();
+            numDraws = 400;
+            for (int i = 0; i < numDraws; i++)
+            {
+                float distanceInwards = (i * i + 3 * (lifeTime - projectile.timeLeft)) % 45;
+                float rotationOffset = (i * i) % numDraws + (i * i + 2 * (lifeTime - projectile.timeLeft)) / 45;
+                float alpha = (45 - distanceInwards) / 45;
+                spriteBatch.Draw(texture, projectile.Center + new Vector2(projectileRadius - distanceInwards, 0).RotatedBy(i * MathHelper.TwoPi / numDraws + rotationOffset) - Main.screenPosition, frame, Color.White * alpha * alphaModifier, 0f, frame.Size() / 2, projectile.scale, effects, 0f);
+            }
+
+            //draw the baddy's body
+            texture = Main.projectileTexture[projectile.type];
+            frame = texture.Frame();
+            numDraws = 48;
+
+            for (int i = 0; i < numDraws; i++)
+            {
+                spriteBatch.Draw(texture, projectile.Center + new Vector2(projectileRadius, 0).RotatedBy(i * MathHelper.TwoPi / numDraws) - Main.screenPosition, frame, Color.White * alphaModifier, i * MathHelper.TwoPi / 48, new Vector2(0, 0.5f), projectile.scale * projectileRadius, effects, 0f);
+            }
+
+            //draw the baddy's eyes
+            texture = mod.GetTexture("NPCs/CataBoss/BaddyPet_Eyes");
+            frame = texture.Frame(1, 3, 0, 0);
+            effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+            spriteBatch.Draw(texture, projectile.Center + new Vector2(projectileRadius + 240, 0).RotatedBy(projectile.rotation) - Main.screenPosition, frame, Color.White * alphaModifier, 0f, frame.Size() / 2, projectile.scale * 2f, effects, 0f);
+
+            if (projectile.timeLeft > fadeTime)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    float rotation = (lifeTime - (projectile.timeLeft - fadeTime)) * (lifeTime - (projectile.timeLeft - fadeTime)) / 50000f + i * MathHelper.TwoPi / 6f;
+                    effects = rotation > MathHelper.Pi ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                    spriteBatch.Draw(texture, projectile.Center + new Vector2(projectileRadius + 120, 0).RotatedBy(rotation) - Main.screenPosition, frame, Color.White * alphaModifier, 0f, frame.Size() / 2, projectile.scale, effects, 0f);
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public class Shadow : ModProjectile
+    {
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Shadow");
+            Main.projFrames[projectile.type] = 1;
+
+            ProjectileID.Sets.TrailCacheLength[projectile.type] = 6;
+            ProjectileID.Sets.TrailingMode[projectile.type] = 2;
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 14;
+            projectile.height = 14;
+            projectile.alpha = 0;
+            projectile.light = 0f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = -1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.scale = 1f;
+            projectile.timeLeft = 293;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame();
+            SpriteEffects effects = projectile.spriteDirection == 1 ? SpriteEffects.None : SpriteEffects.FlipVertically;
+
+            for (int i = projectile.oldPos.Length - 1; i >= 0; i--)
+            {
+                float alpha = (projectile.oldPos.Length - i) / (float)projectile.oldPos.Length;
+                spriteBatch.Draw(texture, projectile.oldPos[i] + projectile.Center - projectile.position - Main.screenPosition, frame, Color.White * alpha, projectile.oldRot[i], frame.Size() / 2, projectile.scale * alpha, effects, 0f);
+            }
+
             return false;
         }
     }
