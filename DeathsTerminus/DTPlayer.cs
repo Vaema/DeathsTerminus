@@ -21,6 +21,7 @@ namespace DeathsTerminus
     public class DTPlayer : ModPlayer
     {
         public bool LostStar;
+        public bool mysteriousPresence;
 
         public int screenShakeTime = 0;
         public Vector2 screenShakeModifier = Vector2.Zero;
@@ -29,6 +30,14 @@ namespace DeathsTerminus
         public override void ModifyScreenPosition()
         {
             Main.screenPosition += screenShakeModifier;
+        }
+
+        public override void UpdateBadLifeRegen()
+        {
+            if (mysteriousPresence)
+            {
+                player.statLifeMax2 = (int)Math.Max(1, player.statLifeMax2 * (player.buffTime[player.FindBuffIndex(BuffType<MysteriousPresence>())] - 1200) / 1200f);
+            }
         }
 
         public override void PostUpdate()
@@ -57,6 +66,7 @@ namespace DeathsTerminus
         public override void ResetEffects()
         {
             LostStar = false;
+            mysteriousPresence = false;
 
             if (screenShakeTime > 0)
             {
