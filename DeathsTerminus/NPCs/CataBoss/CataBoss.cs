@@ -142,8 +142,6 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             npc.life = npc.lifeMax;
 
-            npc.ai[0] = 29;
-
             switch (npc.ai[0])
             {
                 case 0:
