@@ -36,7 +36,7 @@ namespace DeathsTerminus
         {
             if (mysteriousPresence)
             {
-                player.statLifeMax2 = (int)Math.Max(1, player.statLifeMax2 * (player.buffTime[player.FindBuffIndex(BuffType<MysteriousPresence>())] - 1200) / 1200f);
+                player.statLifeMax2 = (int)Math.Max(1, player.statLifeMax2 * (player.buffTime[player.FindBuffIndex(BuffType<MysteriousPresence>())] - 1500) / 60f);
             }
         }
 
@@ -83,6 +83,12 @@ namespace DeathsTerminus
                     Main.npc[i].GetGlobalNPC<DTGlobalNPC>().flawless = false;
                 }
             }
+        }
+
+        public override void UpdateBiomeVisuals()
+        {
+            bool cataBoss = NPC.AnyNPCs(NPCType<NPCs.CataBoss.CataBoss>());
+            player.ManageSpecialBiomeVisuals("DeathsTerminus:CataBoss", cataBoss);
         }
     }
 }

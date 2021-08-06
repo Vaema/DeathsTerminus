@@ -34,6 +34,10 @@ namespace DeathsTerminus
 		public override void Load()
         {
             On.Terraria.Main.DrawInterface_Resources_Life += PostDrawLifeBar;
+
+            //cataboss sky stuff
+            Filters.Scene["DeathsTerminus:CataBoss"] = new Filter(new ScreenShaderData("FilterMiniTower").UseColor(1f, 1f, 1f).UseOpacity(0f), EffectPriority.VeryLow);
+            SkyManager.Instance["DeathsTerminus:CataBoss"] = new NPCs.CataBoss.CataBossSky();
         }
 
         //to make it not draw the vanilla hearts, just don't do orig.Invoke()
