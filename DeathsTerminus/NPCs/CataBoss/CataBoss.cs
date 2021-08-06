@@ -8,17 +8,19 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.IO;
+using Terraria.Graphics.Effects;
 
 /*Things I need to do
  L A M P
  Rework phase 3 fishrons?
-    Moths form fixed square (or rectangular) arena, fishrons charge across before exploding in fixed positions
+    Idea for this if I do so: Moths form fixed square (or rectangular) arena, fishrons charge across before exploding in fixed positions
         Leaving the arena just causes it to reposition
     Boss possibly teleports to shield-bonk you in between bounces?
     Phase 3 bubbles should leave/pop after the attack
- Replace placeholder dialogue
+ Possibly make shadow projectiles more visible
  Defeat dialogue/anim
  Adjust damage/kb values to not be placeholders for everything
+ Background sun fades (maybe also include other background elements during p3 and p4)
  */
 
 namespace DeathsTerminus.NPCs.CataBoss
@@ -34,6 +36,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         private bool holdingShield;
         private bool onSlimeMount;
         private int iceShieldCooldown;
+        private int hitDialogueCooldown;
         private bool drawSpawnTransitionRing;
         private Color spawnTransitionColor = Color.Purple;
         private Color auraColor = Color.Purple;
@@ -120,6 +123,10 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (iceShieldCooldown > 0)
             {
                 iceShieldCooldown--;
+            }
+            if (hitDialogueCooldown > 0)
+            {
+                hitDialogueCooldown--;
             }
             if (drawAura)
             {
@@ -309,9 +316,11 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             spawnTransitionColor = Color.Purple;
 
+            CataBossSky.celestialObject = 0;
+
             if (npc.ai[1] == 120)
             {
-                CombatText.NewText(npc.getRect(), new Color(0, 76, 153), "So you think you can beat me, huh?", true);
+                CombatText.NewText(npc.getRect(), new Color(0, 76, 153), "So you think you can defeat me?", true);
             }
             else if (npc.ai[1] == 180)
             {
@@ -319,7 +328,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
             else if (npc.ai[1] == 299)
             {
-                CombatText.NewText(npc.getRect(), Color.Purple, "Well I'd love to see you even HIT me!", true);
+                CombatText.NewText(npc.getRect(), Color.Purple, "Well then, let's see what you can do.", true);
             }
 
             //transition animation
@@ -335,6 +344,171 @@ namespace DeathsTerminus.NPCs.CataBoss
                     npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
                 npc.spriteDirection = npc.direction;
                 Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 300)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void Phase1To2Animation()
+        {
+            //Pre-animation and text
+            Player player = Main.player[npc.target];
+
+            spawnTransitionColor = Color.Orange;
+
+            if (npc.ai[1] == 120)
+            {
+                CombatText.NewText(npc.getRect(), Color.Purple, "Not bad, you've survived a minute.", true);
+            }
+            else if (npc.ai[1] == 180)
+            {
+                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
+            }
+            else if (npc.ai[1] == 299)
+            {
+                CombatText.NewText(npc.getRect(), Color.Orange, "But it will only get harder from here.", true);
+
+                drawEyeTrail = true;
+
+                auraColor = spawnTransitionColor;
+
+                CataBossSky.celestialObject = 1;
+            }
+
+            //transition animation
+            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
+            {
+                npc.velocity = Vector2.Zero;
+
+                drawSpawnTransitionRing = true;
+            }
+            else
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 300)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void Phase2To3Animation()
+        {
+            //Pre-animation and text
+            Player player = Main.player[npc.target];
+
+            spawnTransitionColor = Color.LightBlue;
+
+            if (npc.ai[1] == 120)
+            {
+                CombatText.NewText(npc.getRect(), Color.Orange, "You're making good progress so far.", true);
+            }
+            else if (npc.ai[1] == 180)
+            {
+                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
+            }
+            else if (npc.ai[1] == 299)
+            {
+                CombatText.NewText(npc.getRect(), Color.LightBlue, "Let's see if you've got what it takes.", true);
+
+                drawAura = true;
+
+                auraColor = spawnTransitionColor;
+
+                CataBossSky.celestialObject = 2;
+            }
+
+            //transition animation
+            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
+            {
+                npc.velocity = Vector2.Zero;
+
+                drawSpawnTransitionRing = true;
+            }
+            else
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 300)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void Phase3To4Animation()
+        {
+            //Pre-animation and text
+            Player player = Main.player[npc.target];
+
+            npc.dontTakeDamage = true;
+            useRainbowColorTransition = true;
+
+            if (npc.ai[1] >= 240)
+            {
+                iceShieldCooldown += 2;
+            }
+
+            if (npc.ai[1] == 120)
+            {
+                CombatText.NewText(npc.getRect(), Color.LightBlue, "That's it, this has taken long enough.", true);
+            }
+            else if (npc.ai[1] == 180)
+            {
+                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
+            }
+            else if (npc.ai[1] == 299)
+            {
+                CombatText.NewText(npc.getRect(), Color.White, "That wasn't meant to happen. Shadow, assistance?", true);
+
+                useRainbowColorAura = true;
+                Main.PlaySound(SoundID.Item27, npc.Center);
+
+                for (int i = 0; i < 6; i++)
+                {
+                    Gore.NewGorePerfect(npc.Center - new Vector2(12, 35), new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 6), mod.GetGoreSlot("Gores/CataBossIceShard"));
+                    Gore.NewGorePerfect(npc.Center - new Vector2(12, 35), new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 6), mod.GetGoreSlot("Gores/CataBossIceShard"));
+                }
+                iceShieldCooldown = 0;
+
+                CataBossSky.celestialObject = 3;
+            }
+
+            //transition animation
+            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
+            {
+                npc.velocity = Vector2.Zero;
+
+                drawSpawnTransitionRing = true;
+            }
+            else
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
 
                 FlyToPoint(goalPosition, Vector2.Zero);
             }
@@ -804,165 +978,6 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             npc.ai[1]++;
             if (npc.ai[1] == 600)
-            {
-                npc.ai[1] = 0;
-                npc.ai[0]++;
-            }
-        }
-
-        private void Phase1To2Animation()
-        {
-            //Pre-animation and text
-            Player player = Main.player[npc.target];
-
-            spawnTransitionColor = Color.Orange;
-
-            if (npc.ai[1] == 120)
-            {
-                CombatText.NewText(npc.getRect(), Color.Purple, "Not bad, you've survived a minute.", true);
-            }
-            else if (npc.ai[1] == 180)
-            {
-                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
-            }
-            else if (npc.ai[1] == 299)
-            {
-                CombatText.NewText(npc.getRect(), Color.Orange, "But it will only get harder from here.", true);
-
-                drawEyeTrail = true;
-
-                auraColor = spawnTransitionColor;
-            }
-
-            //transition animation
-            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
-            {
-                npc.velocity = Vector2.Zero;
-
-                drawSpawnTransitionRing = true;
-            }
-            else
-            {
-                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
-                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-                npc.spriteDirection = npc.direction;
-                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
-
-                FlyToPoint(goalPosition, Vector2.Zero);
-            }
-
-            npc.ai[1]++;
-            if (npc.ai[1] == 300)
-            {
-                npc.ai[1] = 0;
-                npc.ai[0]++;
-            }
-        }
-
-        private void Phase2To3Animation()
-        {
-            //Pre-animation and text
-            Player player = Main.player[npc.target];
-
-            spawnTransitionColor = Color.LightBlue;
-
-            if (npc.ai[1] == 120)
-            {
-                CombatText.NewText(npc.getRect(), Color.Orange, "Placeholder 1", true);
-            }
-            else if (npc.ai[1] == 180)
-            {
-                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
-            }
-            else if (npc.ai[1] == 299)
-            {
-                CombatText.NewText(npc.getRect(), Color.LightBlue, "Placeholder 2", true);
-
-                drawAura = true;
-
-                auraColor = spawnTransitionColor;
-            }
-
-            //transition animation
-            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
-            {
-                npc.velocity = Vector2.Zero;
-
-                drawSpawnTransitionRing = true;
-            }
-            else
-            {
-                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
-                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-                npc.spriteDirection = npc.direction;
-                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
-
-                FlyToPoint(goalPosition, Vector2.Zero);
-            }
-
-            npc.ai[1]++;
-            if (npc.ai[1] == 300)
-            {
-                npc.ai[1] = 0;
-                npc.ai[0]++;
-            }
-        }
-
-        private void Phase3To4Animation()
-        {
-            //Pre-animation and text
-            Player player = Main.player[npc.target];
-
-            npc.dontTakeDamage = true;
-            useRainbowColorTransition = true;
-
-            if (npc.ai[1] >= 240)
-            {
-                iceShieldCooldown += 2;
-            }
-
-            if (npc.ai[1] == 120)
-            {
-                CombatText.NewText(npc.getRect(), Color.LightBlue, "Placeholder 3", true);
-            }
-            else if (npc.ai[1] == 180)
-            {
-                Main.PlaySound(SoundID.Zombie, npc.Center, 105);
-            }
-            else if (npc.ai[1] == 299)
-            {
-                CombatText.NewText(npc.getRect(), Color.White, "Oh dear.", true);
-
-                useRainbowColorAura = true;
-                Main.PlaySound(SoundID.Item27, npc.Center);
-
-                for (int i = 0; i < 6; i++)
-                {
-                    Gore.NewGorePerfect(npc.Center - new Vector2(12, 35), new Vector2(6, 0).RotatedBy(i * MathHelper.TwoPi / 6), mod.GetGoreSlot("Gores/CataBossIceShard"));
-                    Gore.NewGorePerfect(npc.Center - new Vector2(12, 35), new Vector2(3, 0).RotatedBy((i + 0.5f) * MathHelper.TwoPi / 6), mod.GetGoreSlot("Gores/CataBossIceShard"));
-                }
-                iceShieldCooldown = 0;
-            }
-
-            //transition animation
-            if (npc.ai[1] >= 180 && npc.ai[1] < 299)
-            {
-                npc.velocity = Vector2.Zero;
-
-                drawSpawnTransitionRing = true;
-            }
-            else
-            {
-                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
-                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
-                npc.spriteDirection = npc.direction;
-                Vector2 goalPosition = player.Center + (npc.Center - player.Center).SafeNormalize(Vector2.Zero) * 360;
-
-                FlyToPoint(goalPosition, Vector2.Zero);
-            }
-
-            npc.ai[1]++;
-            if (npc.ai[1] == 300)
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
@@ -1875,7 +1890,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 npc.ai[2] = player.Center.X;
                 npc.ai[3] = player.Center.Y;
 
-                Main.LocalPlayer.AddBuff(BuffType<Buffs.MysteriousPresence>(), 1260);
+                Main.LocalPlayer.AddBuff(BuffType<Buffs.MysteriousPresence>(), 1560);
 
                 if (Main.netMode != 1)
                 {
@@ -1965,6 +1980,43 @@ namespace DeathsTerminus.NPCs.CataBoss
                         break;
                     }
                 }
+            }
+        }
+
+        public override void OnHitByItem(Player player, Item item, int damage, float knockback, bool crit)
+        {
+            if (hitDialogueCooldown == 0)
+            {
+                CombatText.NewText(npc.getRect(), auraColor, "Save your energy, you can't hurt me.", true);
+                hitDialogueCooldown = 120;
+            }
+        }
+
+        public override void OnHitByProjectile(Projectile projectile, int damage, float knockback, bool crit)
+        {
+            if (hitDialogueCooldown == 0)
+            {
+                if (projectile.ranged)
+                {
+                    CombatText.NewText(npc.getRect(), auraColor, "Save your ammunition, it can't break my shield.", true);
+                }
+                else if (projectile.magic)
+                {
+                    CombatText.NewText(npc.getRect(), auraColor, "Wasting mana is all you're doing here.", true);
+                }
+                else if (projectile.minion || ProjectileID.Sets.MinionShot[projectile.type] || projectile.sentry || ProjectileID.Sets.SentryShot[projectile.type])
+                {
+                    CombatText.NewText(npc.getRect(), auraColor, "Call off your minions, they won't target me.", true);
+                }
+                else if (projectile.thrown)
+                {
+                    CombatText.NewText(npc.getRect(), auraColor, "Throwing? Post-Moon Lord? Really?", true);
+                }
+                else
+                {
+                    CombatText.NewText(npc.getRect(), auraColor, "Save your energy, you can't hurt me.", true);
+                }
+                hitDialogueCooldown = 120;
             }
         }
 
@@ -4972,5 +5024,221 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             return false;
         }
+    }
+
+    public class CataBossSky : CustomSky
+    {
+        public static int celestialObject;
+
+        private bool isActive;
+        private const int eclipseFrameSize = 256;
+        private static Texture2D eclipseTexture;
+        private static Texture2D blueSunTexture;
+        private static Texture2D rainbowSunTexture;
+        private static int eclipseFrame;
+
+        public override void OnLoad()
+        {
+            int textureFramesX = 10;
+            int textureFramesY = 6;
+            eclipseTexture = new Texture2D(Main.spriteBatch.GraphicsDevice, eclipseFrameSize * textureFramesX, eclipseFrameSize * textureFramesY, false, SurfaceFormat.Color);
+            List<Color> list = new List<Color>();
+            for (int k = 0; k < textureFramesY; k++)
+            {
+                for (int j = 0; j < eclipseTexture.Height / textureFramesY; j++)
+                {
+                    for (int l = 0; l < textureFramesX; l++)
+                    {
+                        for (int i = 0; i < eclipseTexture.Width / textureFramesX; i++)
+                        {
+                            float x = (2 * i / (float)(eclipseTexture.Width / textureFramesX - 1) - 1);
+                            float y = (2 * j / (float)(eclipseTexture.Height / textureFramesY - 1) - 1);
+
+                            float radius = (float)Math.Sqrt(x * x + y * y);
+                            float angle = (float)Math.Atan2(x, y);
+
+                            int frame = k * textureFramesX + l;
+
+                            float waveFunction = (float)(
+                                    1 / 4f * Math.Cos(12 * (angle + 12f) + frame * MathHelper.TwoPi / 12 + 12f) +
+                                    1 / 4f * Math.Cos(-15 * (angle + 15f) + frame * MathHelper.TwoPi / 15 + 15f) +
+                                    1 / 4f * Math.Cos(-20 * (angle + 20f) + frame * MathHelper.TwoPi / 20 + 20f) +
+                                    1 / 4f * Math.Cos(30 * (angle + 30f) + frame * MathHelper.TwoPi / 30 + 30f)
+                                );
+
+                            float luminosityFactor = (float)Math.Pow((1 - Math.Pow(radius, 4)), 2);
+                            float waviness = (float)(0.5f * Math.Exp(-50 * Math.Pow(radius - 0.8f, 2)));
+                            float index = luminosityFactor * (1 - waviness * waveFunction);
+                            float eclipseLuminosityFactor = (float)Math.Pow(1 - Math.Pow(1 - Math.Pow(radius, 2), 64), Math.Pow(64, 4));
+
+                            float hue = (index / 4f - 1 / 12f) % 1;
+                            float saturation = (float)Math.Pow(eclipseLuminosityFactor, 2);
+                            float luminosity = luminosityFactor * eclipseLuminosityFactor;
+                            Color color = Main.hslToRgb(hue, saturation, luminosity);
+
+                            int r = color.R;//448 - (int)(512 * index);
+                            int g = color.G;//384 - (int)(512 * index);
+                            int b = color.B;//256 - (int)(512 * index);
+                            int alpha = radius >= 1 ? 0 : (int)(255 * index);
+
+                            //list.Add(new Color(r, g, b, alpha));
+                            list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                        }
+                    }
+                }
+            }
+            eclipseTexture.SetData(list.ToArray());
+            //texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBGEclipse.png", FileMode.Create), texture.Width, texture.Height);
+
+            blueSunTexture = new Texture2D(Main.spriteBatch.GraphicsDevice, eclipseFrameSize * textureFramesX, eclipseFrameSize * textureFramesY, false, SurfaceFormat.Color);
+            list = new List<Color>();
+            for (int k = 0; k < textureFramesY; k++)
+            {
+                for (int j = 0; j < eclipseTexture.Height / textureFramesY; j++)
+                {
+                    for (int l = 0; l < textureFramesX; l++)
+                    {
+                        for (int i = 0; i < eclipseTexture.Width / textureFramesX; i++)
+                        {
+                            float x = (2 * i / (float)(eclipseTexture.Width / textureFramesX - 1) - 1);
+                            float y = (2 * j / (float)(eclipseTexture.Height / textureFramesY - 1) - 1);
+
+                            float radius = (float)Math.Sqrt(x * x + y * y);
+                            float angle = (float)Math.Atan2(x, y);
+
+                            int frame = k * textureFramesX + l;
+
+                            float waveFunction = (float)(
+                                    1 / 8f * Math.Cos(12 * (angle + 12f) + frame * MathHelper.TwoPi / 12 + 12f) +
+                                    1 / 8f * Math.Cos(-15 * (angle + 15f) + frame * MathHelper.TwoPi / 15 + 15f) +
+                                    1 / 8f * Math.Cos(-20 * (angle + 20f) + frame * MathHelper.TwoPi / 20 + 20f) +
+                                    1 / 8f * Math.Cos(30 * (angle + 30f) + frame * MathHelper.TwoPi / 30 + 30f)
+                                );
+
+                            float luminosityFactor = (float)Math.Pow((1 - Math.Pow(radius, 4)), 2);
+                            float waviness = (float)(0.5f * Math.Exp(-50 * Math.Pow(radius - 0.8f, 2)));
+                            float index = luminosityFactor * (1 - waviness * waveFunction);
+
+                            float hue = (index / 4f + 1 / 2.5f) % 1;
+                            float saturation = 1;
+                            float luminosity = luminosityFactor;
+                            Color color = Main.hslToRgb(hue, saturation, luminosity);
+
+                            int r = color.R;//448 - (int)(512 * index);
+                            int g = color.G;//384 - (int)(512 * index);
+                            int b = color.B;//256 - (int)(512 * index);
+                            int alpha = radius >= 1 ? 0 : (int)(255 * index);
+
+                            //list.Add(new Color(r, g, b, alpha));
+                            list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                        }
+                    }
+                }
+            }
+            blueSunTexture.SetData(list.ToArray());
+            //blueSunTexture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBGBlueSun.png", FileMode.Create), blueSunTexture.Width, blueSunTexture.Height);
+
+            rainbowSunTexture = new Texture2D(Main.spriteBatch.GraphicsDevice, eclipseFrameSize * textureFramesX, eclipseFrameSize * textureFramesY, false, SurfaceFormat.Color);
+            list = new List<Color>();
+            for (int k = 0; k < textureFramesY; k++)
+            {
+                for (int j = 0; j < eclipseTexture.Height / textureFramesY; j++)
+                {
+                    for (int l = 0; l < textureFramesX; l++)
+                    {
+                        for (int i = 0; i < eclipseTexture.Width / textureFramesX; i++)
+                        {
+                            float x = (2 * i / (float)(eclipseTexture.Width / textureFramesX - 1) - 1);
+                            float y = (2 * j / (float)(eclipseTexture.Height / textureFramesY - 1) - 1);
+
+                            float radius = (float)Math.Sqrt(x * x + y * y);
+                            float angle = (float)Math.Atan2(x, y);
+
+                            int frame = k * textureFramesX + l;
+
+                            float waveFunction = (float)(
+                                    1 / 8f * Math.Cos(12 * (angle + 12f) + frame * MathHelper.TwoPi / 12 + 12f) +
+                                    1 / 8f * Math.Cos(-15 * (angle + 15f) + frame * MathHelper.TwoPi / 15 + 15f) +
+                                    1 / 8f * Math.Cos(-20 * (angle + 20f) + frame * MathHelper.TwoPi / 20 + 20f) +
+                                    1 / 8f * Math.Cos(30 * (angle + 30f) + frame * MathHelper.TwoPi / 30 + 30f)
+                                );
+
+                            float luminosityFactor = (float)Math.Pow((1 - Math.Pow(radius, 4)), 2);
+                            float waviness = (float)(0.5f * Math.Exp(-50 * Math.Pow(radius - 0.8f, 2)));
+                            float index = luminosityFactor * (1 - waviness * waveFunction);
+
+                            float hue = (index / 4f + frame / 60f) % 1;
+                            float saturation = 1;
+                            float luminosity = luminosityFactor;
+                            Color color = Main.hslToRgb(hue, saturation, luminosity);
+
+                            int r = color.R;//448 - (int)(512 * index);
+                            int g = color.G;//384 - (int)(512 * index);
+                            int b = color.B;//256 - (int)(512 * index);
+                            int alpha = radius >= 1 ? 0 : (int)(255 * index);
+
+                            //list.Add(new Color(r, g, b, alpha));
+                            list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
+                        }
+                    }
+                }
+            }
+            rainbowSunTexture.SetData(list.ToArray());
+            //rainbowSunTexture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBGRainbowSun.png", FileMode.Create), blueSunTexture.Width, blueSunTexture.Height);
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            eclipseFrame++;
+            if (eclipseFrame == 60) eclipseFrame = 0;
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, float minDepth, float maxDepth)
+        {
+            //draw the sky and the eclipse of doom
+            if (maxDepth >= 0 && minDepth < 0)
+            {
+                spriteBatch.Draw(ModContent.GetTexture("DeathsTerminus/NPCs/CataBoss/HeavenPetProjectileTelegraph"), new Rectangle(0, 0, Main.screenWidth, Main.screenHeight), Color.Black);
+
+                switch (celestialObject)
+                {
+                    case 1:
+                        spriteBatch.Draw(eclipseTexture, new Vector2(Main.screenWidth / 2, Main.screenHeight / 2 - 300) - new Vector2(eclipseFrameSize / 2), new Rectangle((eclipseFrame % 10) * eclipseFrameSize, (eclipseFrame / 10) * eclipseFrameSize, eclipseFrameSize, eclipseFrameSize), Color.White);
+                        break;
+                    case 2:
+                        spriteBatch.Draw(blueSunTexture, new Vector2(Main.screenWidth / 2, Main.screenHeight / 2 - 300) - new Vector2(eclipseFrameSize / 2), new Rectangle((eclipseFrame % 10) * eclipseFrameSize, (eclipseFrame / 10) * eclipseFrameSize, eclipseFrameSize, eclipseFrameSize), Color.White);
+                        break;
+                    case 3:
+                        spriteBatch.Draw(rainbowSunTexture, new Vector2(Main.screenWidth / 2, Main.screenHeight / 2 - 300) - new Vector2(eclipseFrameSize / 2), new Rectangle((eclipseFrame % 10) * eclipseFrameSize, (eclipseFrame / 10) * eclipseFrameSize, eclipseFrameSize, eclipseFrameSize), Color.White);
+                        break;
+                }
+            }
+        }
+
+        public override float GetCloudAlpha()
+        {
+            return 1f;
+        }
+
+        public override void Activate(Vector2 position, params object[] args)
+        {
+            isActive = true;
+        }
+
+        public override void Deactivate(params object[] args)
+        {
+            isActive = false;
+        }
+
+        public override void Reset()
+        {
+            isActive = false;
+        }
+
+        public override bool IsActive()
+        {
+            return isActive;
+        }
+
     }
 }
