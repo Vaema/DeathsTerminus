@@ -22,6 +22,7 @@ namespace DeathsTerminus
     {
         public bool LostStar;
         public bool mysteriousPresence;
+        public bool ascendedFlames;
 
         public int screenShakeTime = 0;
         public Vector2 screenShakeModifier = Vector2.Zero;
