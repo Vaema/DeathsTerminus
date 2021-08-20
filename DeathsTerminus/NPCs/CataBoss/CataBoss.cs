@@ -10,19 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using Terraria.Graphics.Effects;
 
-/*Things I need to do
- L A M P
- Rework phase 3 fishrons?
-    Idea for this if I do so: Moths form fixed square (or rectangular) arena, fishrons charge across before exploding in fixed positions
-        Leaving the arena just causes it to reposition
-    Boss possibly teleports to shield-bonk you in between bounces?
-    Phase 3 bubbles should leave/pop after the attack
- Possibly make shadow projectiles more visible
- Defeat dialogue/anim
- Adjust damage/kb values to not be placeholders for everything
- Background sun fades (maybe also include other background elements during p3 and p4)
- */
-
 namespace DeathsTerminus.NPCs.CataBoss
 {
     [AutoloadBossHead]
@@ -1523,7 +1510,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             Player player = Main.player[npc.target];
 
-            int numRings = 20;
+            int numRings = 16;
             int period = 4;
 
             if (npc.ai[1] < 60)
@@ -1662,7 +1649,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         {
             Player player = Main.player[npc.target];
 
-            int numRings = 12;
+            int numRings = 9;
             int period = 8;
 
             if (npc.ai[1] < 60)
@@ -3871,7 +3858,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 projectile.hostile = false;
 
-                projectile.ai[0] += 2.5f * projectile.ai[1] * (mineTime - (480 - projectile.timeLeft)) / mineTime;
+                projectile.ai[0] += 3.125f * projectile.ai[1] * (mineTime - (480 - projectile.timeLeft)) / mineTime;
 
                 projectile.alpha = (int)(256 - 128 * ((480 - projectile.timeLeft) / mineTime));
             }
@@ -3999,7 +3986,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 projectile.hostile = false;
 
-                projectile.ai[0] += 3f * projectile.ai[1] * (mineTime - (600 - projectile.timeLeft)) / mineTime;
+                projectile.ai[0] += 3.75f * projectile.ai[1] * (mineTime - (600 - projectile.timeLeft)) / mineTime;
 
                 projectile.alpha = (int)(256 - 128 * ((600 - projectile.timeLeft) / mineTime));
             }
@@ -5031,7 +5018,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         public static int celestialObject;
 
         private bool isActive;
-        private const int eclipseFrameSize = 256;
+        private const int eclipseFrameSize = 512;
         private static Texture2D eclipseTexture;
         private static Texture2D blueSunTexture;
         private static Texture2D rainbowSunTexture;
