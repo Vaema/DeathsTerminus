@@ -55,6 +55,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             npc.lifeMax = 250;
             npc.chaseable = false;
             npc.HitSound = SoundID.NPCHit5;
+            npc.DeathSound = SoundID.NPCDeath59;
 
             npc.damage = 160;
             npc.knockBackResist = 0f;
@@ -239,10 +240,22 @@ namespace DeathsTerminus.NPCs.CataBoss
                     MothronsAndLampCircularAttack();
                     break;
                 case 28:
-                    //5 secs each
                     if (Main.expertMode)
                     {
+                        //5 secs each
                         Phase3To4Animation();
+                    }
+                    else
+                    {
+                        //4 secs each
+                        DeathAnimation();
+                    }
+                    break;
+                case 29:
+                    if (Main.expertMode)
+                    {
+                        //32 secs each
+                        MegaSprocketVsMegaBaddySuperCinematicDesperationAttack();
                     }
                     else
                     {
@@ -251,11 +264,11 @@ namespace DeathsTerminus.NPCs.CataBoss
                         npc.checkDead();
                     }
                     break;
-                case 29:
-                    //32 secs each
-                    MegaSprocketVsMegaBaddySuperCinematicDesperationAttack();
-                    break;
                 case 30:
+                    //4 secs each
+                    DeathAnimation();
+                    break;
+                case 31:
                     killable = true;
                     npc.life = 0;
                     npc.checkDead();
@@ -502,6 +515,45 @@ namespace DeathsTerminus.NPCs.CataBoss
 
             npc.ai[1]++;
             if (npc.ai[1] == 300)
+            {
+                npc.ai[1] = 0;
+                npc.ai[0]++;
+            }
+        }
+
+        private void DeathAnimation()
+        {
+            //Pre-animation and text
+            Player player = Main.player[npc.target];
+
+            if (npc.ai[1] == 60 && Main.netMode != 1)
+            {
+                Vector2 shotSpeed = new Vector2(0, 12).RotatedByRandom(0.5f);
+                Projectile.NewProjectile(npc.Center - 180 * shotSpeed, shotSpeed, ProjectileType<CataBossStar>(), 0, 0f, Main.myPlayer);
+            }
+
+            if (npc.ai[1] == 120)
+            {
+                CombatText.NewText(npc.getRect(), Color.White, "Well, that was fun. I sure hope my current vulnerability won't suddenly become an issue.", true);
+            }
+
+            //transition animation
+            if (npc.ai[1] >= 60)
+            {
+                npc.velocity = Vector2.Zero;
+            }
+            else
+            {
+                if (Math.Abs(player.Center.X - npc.Center.X) > 8)
+                    npc.direction = player.Center.X > npc.Center.X ? 1 : -1;
+                npc.spriteDirection = npc.direction;
+                Vector2 goalPosition = player.Center + new Vector2(-npc.direction, 0) * 240;
+
+                FlyToPoint(goalPosition, Vector2.Zero);
+            }
+
+            npc.ai[1]++;
+            if (npc.ai[1] == 240)
             {
                 npc.ai[1] = 0;
                 npc.ai[0]++;
@@ -885,8 +937,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 {
                     npc.ai[2] = npc.Center.X;
                     npc.ai[3] = npc.Center.Y;
-
-                    //need to make ray of sunshine cause screenshake
+                    
                     Main.PlaySound(SoundID.Zombie, npc.Center + new Vector2(npc.direction, 0) * 1500, 104);
                     Main.LocalPlayer.GetModPlayer<DTPlayer>().screenShakeTime = 60;
 
@@ -1418,7 +1469,6 @@ namespace DeathsTerminus.NPCs.CataBoss
                     npc.ai[2] = npc.Center.X;
                     npc.ai[3] = npc.Center.Y;
 
-                    //need to make ray of sunshine cause screenshake
                     Main.PlaySound(SoundID.Zombie, npc.Center + new Vector2(npc.direction, 0) * 1500, 104);
                     Main.LocalPlayer.GetModPlayer<DTPlayer>().screenShakeTime = 60;
 
@@ -2178,7 +2228,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             if (killable)
             {
                 //doesn't actually happen yet
-                NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, NPCType<CataclysmicArmageddon>());
+                NPC.NewNPC((int)npc.position.X, (int)npc.position.Y + npc.height / 2, NPCType<CataclysmicArmageddon>());
                 return true;
             }
             npc.life = npc.lifeMax;
@@ -2770,8 +2820,8 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Sun Lamp");
-            /*
-            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 2, false, SurfaceFormat.Color);
+            
+            /*Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 2, false, SurfaceFormat.Color);
 			System.Collections.Generic.List<Color> list = new System.Collections.Generic.List<Color>();
 			for (int j = 0; j < texture.Height; j++)
 			{
@@ -2792,22 +2842,28 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                     else
                     {
-                        float x = i / (float)(texture.Width - 1);
+                        float x = (2 * i / (float)(texture.Width - 1) - 1);
 
-                        float index = 4 * x * (1 - x);
+                        float index = (float)Math.Pow((1 - Math.Pow(x, 4)), 2);
+                        float eclipseLuminosityFactor = (float)Math.Pow(1 - Math.Pow(1 - Math.Pow(x, 2), 64), Math.Pow(64, 4));
 
-                        int r = 448 - (int)(512 * index);
-                        int g = 384 - (int)(512 * index);
-                        int b = 256 - (int)(512 * index);
-                        int alpha = (int)(255 * index);
+                        float hue = (index / 4f - 1 / 12f) % 1;
+                        float saturation = (float)Math.Pow(eclipseLuminosityFactor, 2);
+                        float luminosity = index * eclipseLuminosityFactor;
+                        Color color = Main.hslToRgb(hue, saturation, luminosity);
+
+                        int r = color.R;//448 - (int)(512 * index);
+                        int g = color.G;//384 - (int)(512 * index);
+                        int b = color.B;//256 - (int)(512 * index);
+                        int alpha = x >= 1 ? 0 : (int)(255 * index);
 
                         list.Add(new Color((int)(r * alpha / 255f), (int)(g * alpha / 255f), (int)(b * alpha / 255f), alpha));
                     }
 				}
 			}
 			texture.SetData(list.ToArray());
-			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);
-            */
+			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);*/
+            
         }
 
         public override void SetDefaults()
@@ -2872,7 +2928,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             drawCacheProjsBehindNPCs.Add(index);
         }
 
-        //need to do new visuals for this
+        //need to make wobble
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
             Texture2D texture = Main.projectileTexture[projectile.type];
@@ -5010,6 +5066,94 @@ namespace DeathsTerminus.NPCs.CataBoss
             spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * (1 - projectile.alpha / 255f), projectile.rotation, frame.Size() / 2, projectile.scale, SpriteEffects.None, 0f);
 
             return false;
+        }
+    }
+
+    public class CataBossStar : ModProjectile
+    {
+        public override string Texture => "Terraria/Projectile_" + ProjectileID.FallingStar;
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Falling Star");
+        }
+        public override void SetDefaults()
+        {
+            projectile.width = 22;
+            projectile.height = 22;
+            projectile.aiStyle = -1;
+            projectile.penetrate = -1;
+            projectile.timeLeft = 3600;
+            projectile.tileCollide = false;
+            projectile.light = 0.9f;
+            projectile.scale = 1.2f;
+        }
+
+        public override void AI()
+        {
+            if (projectile.ai[1] == 0f && !Collision.SolidCollision(projectile.position, projectile.width, projectile.height))
+            {
+                projectile.ai[1] = 1f;
+                projectile.netUpdate = true;
+            }
+            if (projectile.timeLeft < 3600 - 180)
+            {
+                projectile.tileCollide = true;
+            }
+            if (projectile.soundDelay == 0)
+            {
+                projectile.soundDelay = 20 + Main.rand.Next(40);
+                Main.PlaySound(SoundID.Item9, projectile.position);
+            }
+            projectile.rotation += (Math.Abs(projectile.velocity.X) + Math.Abs(projectile.velocity.Y)) * 0.01f * (float)projectile.direction;
+            if (projectile.ai[1] == 1f)
+            {
+                projectile.light = 0.9f;
+                if (Main.rand.Next(10) == 0)
+                {
+                    Vector2 position30 = projectile.position;
+                    int width27 = projectile.width;
+                    int height27 = projectile.height;
+                    float speedX13 = projectile.velocity.X * 0.5f;
+                    float speedY13 = projectile.velocity.Y * 0.5f;
+                    Color newColor = default(Color);
+                    Dust.NewDust(position30, width27, height27, 58, speedX13, speedY13, 150, newColor, 1.2f);
+                }
+                if (Main.rand.Next(20) == 0)
+                {
+                    Gore.NewGore(projectile.position, new Vector2(projectile.velocity.X * 0.2f, projectile.velocity.Y * 0.2f), Main.rand.Next(16, 18));
+                }
+            }
+        }
+
+        public override void Kill(int timeLeft)
+        {
+            Main.PlaySound(SoundID.Item10, projectile.position);
+            int num537 = 10;
+            int num538 = 3;
+            for (int num539 = 0; num539 < num537; num539++)
+            {
+                Dust.NewDust(projectile.position, projectile.width, projectile.height, 58, projectile.velocity.X * 0.1f, projectile.velocity.Y * 0.1f, 150, default(Color), 1.2f);
+            }
+            for (int num540 = 0; num540 < num538; num540++)
+            {
+                int num541 = Main.rand.Next(16, 18);
+                Gore.NewGore(projectile.position, new Vector2(projectile.velocity.X * 0.05f, projectile.velocity.Y * 0.05f), num541);
+            }
+            for (int num542 = 0; num542 < 10; num542++)
+            {
+                Dust.NewDust(projectile.position, projectile.width, projectile.height, 57, projectile.velocity.X * 0.1f, projectile.velocity.Y * 0.1f, 150, default(Color), 1.2f);
+            }
+            for (int num543 = 0; num543 < 3; num543++)
+            {
+                Gore.NewGore(projectile.position, new Vector2(projectile.velocity.X * 0.05f, projectile.velocity.Y * 0.05f), Main.rand.Next(16, 18));
+            }
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            lightColor = Color.White;
+            return true;
         }
     }
 
