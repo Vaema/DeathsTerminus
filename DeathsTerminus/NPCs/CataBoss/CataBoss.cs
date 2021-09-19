@@ -24,6 +24,7 @@ namespace DeathsTerminus.NPCs.CataBoss
         private bool onSlimeMount;
         private int iceShieldCooldown;
         private int hitDialogueCooldown;
+        private int rodAnticheeseCooldown;
         private bool drawSpawnTransitionRing;
         private Color spawnTransitionColor = Color.Purple;
         private Color auraColor = Color.Purple;
@@ -116,6 +117,10 @@ namespace DeathsTerminus.NPCs.CataBoss
             {
                 hitDialogueCooldown--;
             }
+            if (rodAnticheeseCooldown > 0)
+            {
+                rodAnticheeseCooldown--;
+            }
             if (drawAura)
             {
                 auraCounter++;
@@ -136,6 +141,16 @@ namespace DeathsTerminus.NPCs.CataBoss
             }
 
             npc.life = npc.lifeMax;
+
+            //RoD anticheese
+            if (npc.ai[0] < 23 && rodAnticheeseCooldown == 0 && player.HeldItem.type == ItemID.RodofDiscord && player.itemTime > 0)
+            {
+                rodAnticheeseCooldown = player.itemTime;
+                if (Main.netMode != 1)
+                {
+                    Projectile.NewProjectile(npc.Center, Vector2.Zero, ProjectileType<CataBossRod>(), 80, 0f, Main.myPlayer, player.whoAmI);
+                }
+            }
 
             switch (npc.ai[0])
             {
@@ -2816,22 +2831,39 @@ namespace DeathsTerminus.NPCs.CataBoss
 
     public class SunLamp : ModProjectile
     {
-        //demon scythe but no dust and it passes through tiles
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Sun Lamp");
-            
-            /*Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 96, 2, false, SurfaceFormat.Color);
+
+            /*
+            int textureFramesX = 15;
+            int textureFramesY = 4;
+            int textureFrameWidth = 96;
+            int textureFrameHeight = 603;
+            Texture2D texture = new Texture2D(Main.spriteBatch.GraphicsDevice, 2 * textureFramesX * textureFrameWidth, textureFramesY * textureFrameHeight, false, SurfaceFormat.Color);
 			System.Collections.Generic.List<Color> list = new System.Collections.Generic.List<Color>();
 			for (int j = 0; j < texture.Height; j++)
 			{
 				for (int i = 0; i < texture.Width; i++)
 				{
-                    if (j == 0)
+                    if (i < texture.Width / 2)
                     {
-                        float x = i / (float)(texture.Width - 1);
+                        int frameX = i / textureFrameWidth;
+                        int frameY = j / textureFrameHeight;
+                        int frame = frameX + frameY * textureFramesX;
+                        float x = Math.Abs(2 * (i % textureFrameWidth) / (float)(textureFrameWidth - 1) - 1);
+                        float y = MathHelper.TwoPi * (j % textureFrameHeight) / (float)textureFrameHeight;
 
-                        float index = 4 * x * (1 - x);
+                        float waveFunction = (float)(
+                                1 / 4f * Math.Cos(12 * (y + 12f) + frame * MathHelper.TwoPi / 12 + 12f) +
+                                1 / 4f * Math.Cos(-15 * (y + 15f) + frame * MathHelper.TwoPi / 15 + 15f) +
+                                1 / 4f * Math.Cos(-20 * (y + 20f) + frame * MathHelper.TwoPi / 20 + 20f) +
+                                1 / 4f * Math.Cos(30 * (y + 30f) + frame * MathHelper.TwoPi / 30 + 30f)
+                            );
+
+                        float luminosityFactor = (float)Math.Pow((1 - Math.Pow(x, 4)), 2);
+                        float waviness = (float)(0.5f * Math.Exp(-50 * Math.Pow(x - 0.8f, 2)));
+                        float index = luminosityFactor * (1 - waviness * waveFunction);
 
                         int r = 255;
                         int g = 255 - (int)(64 * (1 - index));
@@ -2842,9 +2874,22 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                     else
                     {
-                        float x = (2 * i / (float)(texture.Width - 1) - 1);
+                        int frameX = (i - texture.Width) / textureFrameWidth;
+                        int frameY = j / textureFrameHeight;
+                        int frame = frameX + frameY * textureFramesX;
+                        float x = Math.Abs(2 * (i % textureFrameWidth) / (float)(textureFrameWidth - 1) - 1);
+                        float y = MathHelper.TwoPi * (j % textureFrameHeight) / (float)textureFrameHeight;
 
-                        float index = (float)Math.Pow((1 - Math.Pow(x, 4)), 2);
+                        float waveFunction = (float)(
+                                1 / 4f * Math.Cos(12 * (y + 12f) + frame * MathHelper.TwoPi / 12 + 12f) +
+                                1 / 4f * Math.Cos(-15 * (y + 15f) + frame * MathHelper.TwoPi / 15 + 15f) +
+                                1 / 4f * Math.Cos(-20 * (y + 20f) + frame * MathHelper.TwoPi / 20 + 20f) +
+                                1 / 4f * Math.Cos(30 * (y + 30f) + frame * MathHelper.TwoPi / 30 + 30f)
+                            );
+
+                        float luminosityFactor = (float)Math.Pow((1 - Math.Pow(x, 4)), 2);
+                        float waviness = (float)(0.5f * Math.Exp(-50 * Math.Pow(x - 0.8f, 2)));
+                        float index = luminosityFactor * (1 - waviness * waveFunction);
                         float eclipseLuminosityFactor = (float)Math.Pow(1 - Math.Pow(1 - Math.Pow(x, 2), 64), Math.Pow(64, 4));
 
                         float hue = (index / 4f - 1 / 12f) % 1;
@@ -2862,8 +2907,8 @@ namespace DeathsTerminus.NPCs.CataBoss
 				}
 			}
 			texture.SetData(list.ToArray());
-			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);*/
-            
+			texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "SunLamp.png", FileMode.Create), texture.Width, texture.Height);
+            */
         }
 
         public override void SetDefaults()
@@ -2915,6 +2960,16 @@ namespace DeathsTerminus.NPCs.CataBoss
                     }
                 }
             }
+
+            projectile.frame++;
+            if ((projectile.frame < 60 || projectile.frame >= 120) && projectile.ai[0] == 1)
+            {
+                projectile.frame = 60;
+            }
+            else if (projectile.frame >= 60 && projectile.ai[0] == 0)
+            {
+                projectile.frame = 0;
+            }
         }
 
         public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox)
@@ -2932,9 +2987,12 @@ namespace DeathsTerminus.NPCs.CataBoss
         public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
         {
             Texture2D texture = Main.projectileTexture[projectile.type];
-            Rectangle frame = texture.Frame(1, 2, 0, (int)projectile.ai[0]);
+            Rectangle frame = texture.Frame(30, 4, projectile.frame / 4, projectile.frame % 4);
 
-            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White, projectile.rotation, frame.Size() / 2, new Vector2(projectile.scale, 4096), SpriteEffects.None, 0f);
+            for (int i = (int)((-Main.screenHeight + Main.screenPosition.Y - projectile.Center.Y) / frame.Height - 1); i <= (int)((Main.screenHeight + Main.screenPosition.Y - projectile.Center.Y) / frame.Height + 1); i++)
+            {
+                spriteBatch.Draw(texture, new Vector2(0, frame.Height * i) + projectile.Center - Main.screenPosition, frame, Color.White, projectile.rotation, frame.Size() / 2, new Vector2(projectile.scale, 1), SpriteEffects.None, 0f);
+            }
 
             return false;
         }
@@ -4156,12 +4214,21 @@ namespace DeathsTerminus.NPCs.CataBoss
 
         public override void AI()
         {
-            if (projectile.timeLeft == 400)
+            if (projectile.localAI[0] == 0)
             {
+                projectile.localAI[0] = 1;
+
                 projectile.direction = Main.npc[(int)projectile.ai[0]].spriteDirection;
                 projectile.spriteDirection = projectile.direction;
 
                 projectile.rotation = projectile.AngleTo(Main.player[Main.npc[(int)projectile.ai[0]].target].Center) - 3 * MathHelper.PiOver4;
+
+                if (projectile.ai[1] == 2f)
+                {
+                    projectile.timeLeft = 600;
+                }
+
+                projectile.localAI[1] = projectile.timeLeft;
             }
 
             if (projectile.spriteDirection != Main.npc[(int)projectile.ai[0]].spriteDirection)
@@ -4172,7 +4239,7 @@ namespace DeathsTerminus.NPCs.CataBoss
             projectile.direction = Main.npc[(int)projectile.ai[0]].spriteDirection;
             projectile.spriteDirection = projectile.direction;
 
-            projectile.rotation += (float)Math.Sin(projectile.timeLeft / 400f * MathHelper.Pi) * 50f * MathHelper.Pi / 400f / 2f * projectile.direction * projectile.ai[1];
+            projectile.rotation += (float)Math.Sin(projectile.timeLeft / projectile.localAI[1] * MathHelper.Pi) * 50f * MathHelper.Pi / projectile.localAI[1] / 2f * projectile.direction * projectile.ai[1];
             projectile.Center = Main.npc[(int)projectile.ai[0]].Center;
         }
 
@@ -5157,6 +5224,61 @@ namespace DeathsTerminus.NPCs.CataBoss
         }
     }
 
+    public class CataBossRod : ModProjectile
+    {
+        //rod of discord of doom
+        public override string Texture => "Terraria/Item_" + ItemID.RodofDiscord;
+
+        public override void SetStaticDefaults()
+        {
+            DisplayName.SetDefault("Rod of Judgement");
+        }
+
+        public override void SetDefaults()
+        {
+            projectile.width = 34;
+            projectile.height = 34;
+            projectile.scale = 10f;
+            projectile.aiStyle = -1;
+            projectile.hostile = true;
+            projectile.penetrate = 1;
+            projectile.tileCollide = false;
+            projectile.ignoreWater = true;
+            projectile.timeLeft = 1200;
+
+            projectile.hide = true;
+        }
+
+        public override void AI()
+        {
+            projectile.rotation += projectile.velocity.X / 0.1f;
+
+            Player player = Main.player[(int)projectile.ai[0]];
+            projectile.velocity += ((player.Center - projectile.Center).SafeNormalize(Vector2.Zero) * Math.Max(16, player.velocity.Length() + 4) - projectile.velocity) / 20f;
+        }
+
+        public override void DrawBehind(int index, List<int> drawCacheProjsBehindNPCsAndTiles, List<int> drawCacheProjsBehindNPCs, List<int> drawCacheProjsBehindProjectiles, List<int> drawCacheProjsOverWiresUI)
+        {
+            drawCacheProjsBehindNPCs.Add(index);
+        }
+
+        public override void OnHitPlayer(Player target, int damage, bool crit)
+        {
+            projectile.Kill();
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            Texture2D texture = Main.projectileTexture[projectile.type];
+
+            Rectangle frame = texture.Frame();
+
+            spriteBatch.Draw(texture, projectile.Center - Main.screenPosition, frame, Color.White * (1 - projectile.alpha / 255f), projectile.rotation, frame.Size() / 2, projectile.scale, SpriteEffects.None, 0f);
+
+            return false;
+        }
+    }
+
     public class CataBossSky : CustomSky
     {
         public static int celestialObject;
@@ -5219,7 +5341,7 @@ namespace DeathsTerminus.NPCs.CataBoss
                 }
             }
             eclipseTexture.SetData(list.ToArray());
-            //texture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBGEclipse.png", FileMode.Create), texture.Width, texture.Height);
+            //eclipseTexture.SaveAsPng(new FileStream(Main.SavePath + Path.DirectorySeparatorChar + "CataBGEclipse.png", FileMode.Create), eclipseTexture.Width, eclipseTexture.Height);
 
             blueSunTexture = new Texture2D(Main.spriteBatch.GraphicsDevice, eclipseFrameSize * textureFramesX, eclipseFrameSize * textureFramesY, false, SurfaceFormat.Color);
             list = new List<Color>();
